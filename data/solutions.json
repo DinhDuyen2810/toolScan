@@ -1,0 +1,100 @@
+[
+  {
+    "name": "SIEM",
+    "endpoint": "163.223.58.132",
+    "username": "admin",
+    "password": "V2SocAdmin@828682",
+    "checkservice": true
+  },
+  {
+    "name": "WAF01",
+    "endpoint": "163.223.58.130",
+    "username": "admin",
+    "password": "admin",
+    "checkservice": true
+  },
+  {
+    "name": "WAF02",
+    "endpoint": "163.223.58.131",
+    "username": "admin",
+    "password": "admin",
+    "checkservice": true
+  },
+  {
+    "name": "EDR",
+    "endpoint": "163.223.58.133",
+    "username": "admin",
+    "password": "V2SocAdmin@828682",
+    "checkservice": true
+  },
+  {
+    "name": "NAC",
+    "endpoint": "163.223.58.134",
+    "username": "admin",
+    "password": "V2SocAdmin@828682",
+    "checkservice": true
+  },
+  {
+    "name": "NIPS_MCNB",
+    "endpoint": "163.223.58.135",
+    "username": "admin",
+    "password": "V2SocAdmin@828682",
+    "checkservice": true
+  },
+  {
+    "name": "NIPS_CSDL",
+    "endpoint": "163.223.58.136",
+    "username": "admin",
+    "password": "V2SocAdmin@828682",
+    "checkservice": true
+  },
+  {
+    "name": "NIPS_Tools",
+    "endpoint": "163.223.58.137",
+    "username": "admin",
+    "password": "V2SocAdmin@828682",
+    "checkservice": true
+  },
+  {
+    "name": "NIPS_LAN",
+    "endpoint": "163.223.58.138",
+    "username": "admin",
+    "password": "admin",
+    "checkservice": true
+  },
+  {
+    "name": "NIPS_DMZ",
+    "endpoint": "163.223.58.139",
+    "username": "admin",
+    "password": "V2SocAdmin@828682",
+    "checkservice": true
+  },
+  {
+    "name": "NIPS_V2Cloud",
+    "endpoint": "163.223.58.144",
+    "username": "admin",
+    "password": "V2SocAdmin@828682",
+    "checkservice": true
+  },
+  {
+    "name": "NIPS_MGT",
+    "endpoint": "163.223.58.146",
+    "username": "admin",
+    "password": "V2SocAdmin@828682",
+    "checkservice": true
+  },
+  {
+    "name": "PAM",
+    "endpoint": "163.223.58.143",
+    "username": "TTS_SOC_DNDuyen",
+    "password": "DNDuyenSOC@2026$#",
+    "checkservice": false
+  },
+  {
+    "name": "NOC",
+    "endpoint": "http://163.223.58.140/cacti/",
+    "username": "admin",
+    "password": "V2labadmin@123",
+    "checkservice": false
+  }
+]
