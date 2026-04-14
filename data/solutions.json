@@ -11,7 +11,7 @@
     "snmp_port": 161,
     "snmp_version": "2c",
     "snmp_community": "v2secure",
-    "snmp_timeout": 2,
+    "snmp_timeout": 1,
     "snmp_retries": 0
   },
   {
@@ -26,7 +26,7 @@
     "snmp_port": 161,
     "snmp_version": "2c",
     "snmp_community": "v2secure",
-    "snmp_timeout": 2,
+    "snmp_timeout": 1,
     "snmp_retries": 0
   },
   {
@@ -41,7 +41,7 @@
     "snmp_port": 161,
     "snmp_version": "2c",
     "snmp_community": "v2secure",
-    "snmp_timeout": 2,
+    "snmp_timeout": 1,
     "snmp_retries": 0
   },
   {
@@ -56,7 +56,7 @@
     "snmp_port": 161,
     "snmp_version": "2c",
     "snmp_community": "v2secure",
-    "snmp_timeout": 2,
+    "snmp_timeout": 1,
     "snmp_retries": 0
   },
   {
@@ -71,7 +71,7 @@
     "snmp_port": 161,
     "snmp_version": "2c",
     "snmp_community": "v2secure",
-    "snmp_timeout": 2,
+    "snmp_timeout": 1,
     "snmp_retries": 0
   },
   {
@@ -86,7 +86,7 @@
     "snmp_port": 161,
     "snmp_version": "2c",
     "snmp_community": "v2secure",
-    "snmp_timeout": 2,
+    "snmp_timeout": 1,
     "snmp_retries": 0
   },
   {
@@ -101,7 +101,7 @@
     "snmp_port": 161,
     "snmp_version": "2c",
     "snmp_community": "v2secure",
-    "snmp_timeout": 2,
+    "snmp_timeout": 1,
     "snmp_retries": 0
   },
   {
@@ -116,7 +116,7 @@
     "snmp_port": 161,
     "snmp_version": "2c",
     "snmp_community": "v2secure",
-    "snmp_timeout": 2,
+    "snmp_timeout": 1,
     "snmp_retries": 0
   },
   {
@@ -131,7 +131,7 @@
     "snmp_port": 161,
     "snmp_version": "2c",
     "snmp_community": "v2secure",
-    "snmp_timeout": 2,
+    "snmp_timeout": 1,
     "snmp_retries": 0
   },
   {
@@ -146,7 +146,7 @@
     "snmp_port": 161,
     "snmp_version": "2c",
     "snmp_community": "v2secure",
-    "snmp_timeout": 2,
+    "snmp_timeout": 1,
     "snmp_retries": 0
   },
   {
@@ -161,7 +161,7 @@
     "snmp_port": 161,
     "snmp_version": "2c",
     "snmp_community": "v2secure",
-    "snmp_timeout": 2,
+    "snmp_timeout": 1,
     "snmp_retries": 0
   },
   {
@@ -176,37 +176,37 @@
     "snmp_port": 161,
     "snmp_version": "2c",
     "snmp_community": "v2secure",
-    "snmp_timeout": 2,
+    "snmp_timeout": 1,
     "snmp_retries": 0
   },
   {
     "name": "PAM",
     "endpoint": "163.223.58.143",
-    "username": "TTS_SOC_DNDuyen",
-    "password": "DNDuyenSOC@2026$#",
+    "username": "admin",
+    "password": "V2SocAdmin@828682",
     "ssh_username": "root",
     "ssh_password": "Vipstmt@828912",
-    "checkservice": false,
+    "checkservice": true,
     "snmp_enabled": true,
     "snmp_port": 161,
     "snmp_version": "2c",
     "snmp_community": "v2secure",
-    "snmp_timeout": 2,
+    "snmp_timeout": 1,
     "snmp_retries": 0
   },
   {
     "name": "NOC",
-    "endpoint": "http://163.223.58.140/cacti/",
+    "endpoint": "163.223.58.150",
     "username": "admin",
-    "password": "V2labadmin@123",
+    "password": "admin",
     "ssh_username": "root",
     "ssh_password": "Vipstmt@828912",
-    "checkservice": false,
+    "checkservice": true,
     "snmp_enabled": true,
     "snmp_port": 161,
     "snmp_version": "2c",
     "snmp_community": "v2secure",
-    "snmp_timeout": 2,
+    "snmp_timeout": 1,
     "snmp_retries": 0
   }
 ]

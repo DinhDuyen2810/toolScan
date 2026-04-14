@@ -7,7 +7,7 @@
   <style>
     * { box-sizing: border-box; }
     body { margin:0; font-family: Arial, Helvetica, sans-serif; background:#f3f6fb; color:#1f2937; }
-    .container { max-width: 1320px; margin: 24px auto; padding: 0 16px 28px; }
+    .container { max-width: 1420px; margin: 24px auto; padding: 0 16px 28px; }
     .card { background:#fff; border-radius:18px; box-shadow:0 10px 30px rgba(15,23,42,.08); padding:22px; margin-bottom:20px; }
     .section-title { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
     .section-title h2, .section-header h3, h1 { margin:0; }
@@ -20,6 +20,7 @@
     .btn-primary { background:#2563eb; color:#fff; }
     .btn-secondary { background:#e5e7eb; color:#111827; }
     .btn-success { background:#16a34a; color:#fff; }
+    .btn-danger { background:#dc2626; color:#fff; }
     .message { display:none; margin-top:12px; padding:12px 14px; border-radius:12px; font-size:14px; }
     .message.show { display:block; }
     .message.info { background:#dbeafe; color:#1d4ed8; }
@@ -33,10 +34,10 @@
     table { width:100%; border-collapse:collapse; }
     th, td { padding:12px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align:middle; }
     th { background:#f9fafb; font-size:14px; }
-    input[type="text"] { width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:10px; font-size:14px; outline:none; }
-    input[type="text"]:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+    input[type="text"], input[type="number"] { width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:10px; font-size:14px; outline:none; }
+    input[type="text"]:focus, input[type="number"]:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
     input[type="checkbox"] { width:18px; height:18px; }
-    tr.invalid input[type="text"] { border-color:#ef4444; background:#fef2f2; }
+    tr.invalid input[type="text"], tr.invalid input[type="number"] { border-color:#ef4444; background:#fef2f2; }
     .badge { display:inline-block; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700; white-space:nowrap; }
     .badge-success { background:#dcfce7; color:#166534; }
     .badge-failed { background:#fee2e2; color:#991b1b; }
@@ -51,11 +52,14 @@
     .service-row td { background:#fafafa; }
     .service-wrap { padding:6px 0 4px; }
     .service-item { display:flex; justify-content:space-between; gap:12px; padding:8px 10px; border:1px solid #e5e7eb; border-radius:10px; margin-bottom:8px; background:#fff; }
+    .cell-actions { width:120px; }
+    .table-caption { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:10px; }
     @media (max-width: 768px) {
       .container { margin:14px auto; }
-      .section-header { flex-direction:column; align-items:flex-start; }
+      .section-header, .table-caption { flex-direction:column; align-items:flex-start; }
       th, td { padding:10px 8px; font-size:13px; }
       .service-item { flex-direction:column; }
+      .cell-actions { width:auto; }
     }
   </style>
 </head>
@@ -70,7 +74,7 @@
     <div class="section-title"><span class="pill">MỤC I</span><h2>Quét server bằng SNMP trước, SSH fallback sau</h2></div>
     <p class="subtitle">Bấm <strong>Bắt đầu quét SSH</strong> để tool thử lấy %CPU, %RAM, %Storage bằng <strong>SNMP</strong> trước. Nếu SNMP lỗi hoặc thiếu dữ liệu thì tool sẽ tự chuyển qua <strong>SSH</strong>. Cột kết quả sẽ hiển thị nguồn lấy dữ liệu.</p>
     <div class="toolbar"><button class="btn-primary" id="sshScanBtn" type="button">Bắt đầu quét SSH</button><button class="btn-secondary" id="sshToggleDbBtn" type="button">Xem database SSH</button></div>
-    <div class="muted">Database SSH đang ẩn. Chỉ hiện ra khi bấm Xem database SSH.</div>
+    <div class="muted">Database SSH đang ẩn. Bạn có thể thêm hoặc xóa dòng tùy ý.</div>
     <div class="message" id="sshMessageBox"></div>
     <div class="summary" id="sshSummaryBox">
       <div class="stat"><div class="label">Tổng số máy</div><div class="value" id="sshTotalCount">0</div></div>
@@ -80,6 +84,7 @@
   </div>
   <div class="card hidden" id="sshDatabaseCard">
     <div class="section-header"><h3>Database SSH</h3><button class="btn-secondary" id="sshHideDbBtn" type="button">Ẩn database SSH</button></div>
+    <div class="table-caption"><div class="muted">Có thể thêm hoặc xóa dòng trực tiếp rồi bấm lưu.</div><button class="btn-secondary" id="sshAddRowBtn" type="button">Thêm dòng</button></div>
     <div style="overflow-x:auto;">
       <table>
         <thead>
@@ -88,9 +93,10 @@
             <th>Username</th>
             <th>Password</th>
             <th>SNMP CommunityString</th>
+            <th class="cell-actions">Thao tác</th>
           </tr>
         </thead>
-        <tbody id="sshDatabaseBody"><tr><td colspan="4" class="empty">Đang tải database SSH...</td></tr></tbody>
+        <tbody id="sshDatabaseBody"><tr><td colspan="5" class="empty">Đang tải database SSH...</td></tr></tbody>
       </table>
     </div>
     <div class="toolbar" style="margin-bottom:0;"><button class="btn-success" id="sshSaveDbBtn" type="button">Lưu database SSH</button></div>
@@ -108,9 +114,10 @@
             <th>% RAM đã dùng</th>
             <th>% Storage đã dùng</th>
             <th>Trạng thái</th>
+            <th class="cell-actions">Quét lẻ</th>
           </tr>
         </thead>
-        <tbody id="sshResultBody"><tr><td colspan="7" class="empty">Chưa có dữ liệu.</td></tr></tbody>
+        <tbody id="sshResultBody"><tr><td colspan="8" class="empty">Chưa có dữ liệu.</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -119,9 +126,9 @@
 
   <div class="card">
     <div class="section-title"><span class="pill">MỤC II</span><h2>Quét website / domain</h2></div>
-    <p class="subtitle">Bấm <strong>Bắt đầu quét website</strong> để kiểm tra 5 domain trong database. Domain nào truy cập được sẽ trả về <strong>200 OK</strong>, domain nào lỗi sẽ trả về status tương ứng hoặc <strong>N/A</strong>.</p>
+    <p class="subtitle">Bấm <strong>Bắt đầu quét website</strong> để kiểm tra các domain trong database. Domain nào truy cập được sẽ trả về <strong>200 OK</strong>, domain nào lỗi sẽ trả về status tương ứng hoặc <strong>N/A</strong>.</p>
     <div class="toolbar"><button class="btn-primary" id="webScanBtn" type="button">Bắt đầu quét website</button><button class="btn-secondary" id="webToggleDbBtn" type="button">Xem database website</button></div>
-    <div class="muted">Database website đang ẩn. Chỉ hiện ra khi bấm Xem database website.</div>
+    <div class="muted">Database website đang ẩn. Bạn có thể thêm hoặc xóa dòng tùy ý.</div>
     <div class="message" id="webMessageBox"></div>
     <div class="summary" id="webSummaryBox">
       <div class="stat"><div class="label">Tổng số domain</div><div class="value" id="webTotalCount">0</div></div>
@@ -131,7 +138,13 @@
   </div>
   <div class="card hidden" id="webDatabaseCard">
     <div class="section-header"><h3>Database website</h3><button class="btn-secondary" id="webHideDbBtn" type="button">Ẩn database website</button></div>
-    <div style="overflow-x:auto;"><table><thead><tr><th>Domain</th></tr></thead><tbody id="webDatabaseBody"><tr><td class="empty">Đang tải database website...</td></tr></tbody></table></div>
+    <div class="table-caption"><div class="muted">Mỗi dòng là một domain hoặc URL.</div><button class="btn-secondary" id="webAddRowBtn" type="button">Thêm dòng</button></div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead><tr><th>Domain</th><th class="cell-actions">Thao tác</th></tr></thead>
+        <tbody id="webDatabaseBody"><tr><td colspan="2" class="empty">Đang tải database website...</td></tr></tbody>
+      </table>
+    </div>
     <div class="toolbar" style="margin-bottom:0;"><button class="btn-success" id="webSaveDbBtn" type="button">Lưu database website</button></div>
   </div>
   <div class="card">
@@ -145,7 +158,7 @@
     <div class="section-title"><span class="pill">MỤC III</span><h2>Quét giải pháp và service</h2></div>
     <p class="subtitle">Tool sẽ thử lấy CPU, RAM, Storage theo thứ tự <strong>SNMP → SSH → Giao diện</strong>. Nếu bật <strong>CheckService</strong>, sau khi truy cập được giao diện tool sẽ tìm tất cả service trong <span class="mono">div.engine-card</span>, lấy tên trong <span class="mono">div.engine-title</span> và trạng thái trong <span class="mono">div.status-badge</span>.</p>
     <div class="toolbar"><button class="btn-primary" id="solutionScanBtn" type="button">Bắt đầu quét giải pháp</button><button class="btn-secondary" id="solutionToggleDbBtn" type="button">Xem database giải pháp</button></div>
-    <div class="muted">Database giải pháp đang ẩn. Chỉ hiện ra khi bấm Xem database giải pháp.</div>
+    <div class="muted">Database giải pháp đang ẩn. Bạn có thể thêm hoặc xóa dòng tùy ý.</div>
     <div class="message" id="solutionMessageBox"></div>
     <div class="summary" id="solutionSummaryBox">
       <div class="stat"><div class="label">Tổng số giải pháp</div><div class="value" id="solutionTotalCount">0</div></div>
@@ -157,6 +170,7 @@
   </div>
   <div class="card hidden" id="solutionDatabaseCard">
     <div class="section-header"><h3>Database giải pháp</h3><button class="btn-secondary" id="solutionHideDbBtn" type="button">Ẩn database giải pháp</button></div>
+    <div class="table-caption"><div class="muted">Tên và endpoint là bắt buộc. Chỉ cần SNMP CommunityString khi bật SNMP.</div><button class="btn-secondary" id="solutionAddRowBtn" type="button">Thêm dòng</button></div>
     <div style="overflow-x:auto;">
       <table>
         <thead>
@@ -167,11 +181,14 @@
             <th>Pass giao diện</th>
             <th>User SSH</th>
             <th>Pass SSH</th>
+            <th>SNMP bật</th>
             <th>SNMP CommunityString</th>
+            <th>SNMP Port</th>
             <th>CheckService</th>
+            <th class="cell-actions">Thao tác</th>
           </tr>
         </thead>
-        <tbody id="solutionDatabaseBody"><tr><td colspan="8" class="empty">Đang tải database giải pháp...</td></tr></tbody>
+        <tbody id="solutionDatabaseBody"><tr><td colspan="11" class="empty">Đang tải database giải pháp...</td></tr></tbody>
       </table>
     </div>
     <div class="toolbar" style="margin-bottom:0;"><button class="btn-success" id="solutionSaveDbBtn" type="button">Lưu database giải pháp</button></div>
@@ -190,9 +207,10 @@
             <th>CPU</th>
             <th>RAM</th>
             <th>Storage</th>
+            <th class="cell-actions">Quét lẻ</th>
           </tr>
         </thead>
-        <tbody id="solutionResultBody"><tr><td colspan="8" class="empty">Chưa có dữ liệu.</td></tr></tbody>
+        <tbody id="solutionResultBody"><tr><td colspan="9" class="empty">Chưa có dữ liệu.</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -207,12 +225,32 @@ function renderThreeStatSummary(group, summary){ group.summaryBox.style.display 
 function renderSolutionSummary(summary){ solution.summaryBox.style.display = 'grid'; solution.totalCount.textContent = summary.total || 0; solution.runningCount.textContent = summary.running || 0; solution.loginSuccessCount.textContent = summary.login_success || 0; solution.issueCount.textContent = summary.issues || 0; solution.serviceRunningCount.textContent = `${summary.running_services || 0}/${summary.total_services || 0}`; }
 async function setDatabaseVisible(group, visible, loader, showText, hideText){ if(visible){ await loader(); group.databaseCard.classList.remove('hidden'); group.toggleDbBtn.textContent = hideText; } else { group.databaseCard.classList.add('hidden'); group.toggleDbBtn.textContent = showText; } }
 
-const ssh = {messageBox:sshMessageBox,summaryBox:sshSummaryBox,totalCount:sshTotalCount,successCount:sshSuccessCount,failedCount:sshFailedCount,databaseCard:sshDatabaseCard,databaseBody:sshDatabaseBody,resultBody:sshResultBody,toggleDbBtn:sshToggleDbBtn,hideDbBtn:sshHideDbBtn,saveDbBtn:sshSaveDbBtn,scanBtn:sshScanBtn};
-const web = {messageBox:webMessageBox,summaryBox:webSummaryBox,totalCount:webTotalCount,successCount:webSuccessCount,failedCount:webFailedCount,databaseCard:webDatabaseCard,databaseBody:webDatabaseBody,resultBody:webResultBody,toggleDbBtn:webToggleDbBtn,hideDbBtn:webHideDbBtn,saveDbBtn:webSaveDbBtn,scanBtn:webScanBtn};
-const solution = {messageBox:solutionMessageBox,summaryBox:solutionSummaryBox,totalCount:solutionTotalCount,runningCount:solutionRunningCount,loginSuccessCount:solutionLoginSuccessCount,issueCount:solutionIssueCount,serviceRunningCount:solutionServiceRunningCount,databaseCard:solutionDatabaseCard,databaseBody:solutionDatabaseBody,resultBody:solutionResultBody,toggleDbBtn:solutionToggleDbBtn,hideDbBtn:solutionHideDbBtn,saveDbBtn:solutionSaveDbBtn,scanBtn:solutionScanBtn};
+const ssh = {messageBox:sshMessageBox,summaryBox:sshSummaryBox,totalCount:sshTotalCount,successCount:sshSuccessCount,failedCount:sshFailedCount,databaseCard:sshDatabaseCard,databaseBody:sshDatabaseBody,resultBody:sshResultBody,toggleDbBtn:sshToggleDbBtn,hideDbBtn:sshHideDbBtn,saveDbBtn:sshSaveDbBtn,scanBtn:sshScanBtn,addRowBtn:sshAddRowBtn};
+const web = {messageBox:webMessageBox,summaryBox:webSummaryBox,totalCount:webTotalCount,successCount:webSuccessCount,failedCount:webFailedCount,databaseCard:webDatabaseCard,databaseBody:webDatabaseBody,resultBody:webResultBody,toggleDbBtn:webToggleDbBtn,hideDbBtn:webHideDbBtn,saveDbBtn:webSaveDbBtn,scanBtn:webScanBtn,addRowBtn:webAddRowBtn};
+const solution = {messageBox:solutionMessageBox,summaryBox:solutionSummaryBox,totalCount:solutionTotalCount,runningCount:solutionRunningCount,loginSuccessCount:solutionLoginSuccessCount,issueCount:solutionIssueCount,serviceRunningCount:solutionServiceRunningCount,databaseCard:solutionDatabaseCard,databaseBody:solutionDatabaseBody,resultBody:solutionResultBody,toggleDbBtn:solutionToggleDbBtn,hideDbBtn:solutionHideDbBtn,saveDbBtn:solutionSaveDbBtn,scanBtn:solutionScanBtn,addRowBtn:solutionAddRowBtn};
+let sshResultsState = [];
+let webResultsState = [];
+let solutionResultsState = [];
 
-function collectRows(body, fields){
-  const rows=[...body.querySelectorAll('tr')];
+
+function bindDeleteRow(body, emptyBuilder){
+  [...body.querySelectorAll('.btn-delete-row')].forEach(btn => {
+    btn.onclick = () => {
+      const rows = [...body.querySelectorAll('tr')].filter(row => !row.querySelector('.empty'));
+      if(rows.length <= 1){
+        showMessage(body.id.includes('solution') ? solution.messageBox : body.id.includes('web') ? web.messageBox : ssh.messageBox,'Database phải còn ít nhất 1 dòng.','error');
+        return;
+      }
+      btn.closest('tr').remove();
+      if(![...body.querySelectorAll('tr')].length){
+        body.innerHTML = emptyBuilder();
+      }
+    };
+  });
+}
+
+function collectRows(body, fields, optionalFields=[]){
+  const rows=[...body.querySelectorAll('tr')].filter(row => !row.querySelector('.empty'));
   const items=[];
   const invalidRows=[];
   rows.forEach((row,index)=>{
@@ -224,7 +262,7 @@ function collectRows(body, fields){
       let value='';
       if(input){ value=input.type==='checkbox' ? input.checked : input.value.trim(); }
       item[field]=value;
-      if(field !== 'checkservice' && !value) invalid=true;
+      if(!optionalFields.includes(field) && field !== 'checkservice' && field !== 'snmp_enabled' && !value) invalid=true;
     });
     if(invalid){
       row.classList.add('invalid');
@@ -235,27 +273,70 @@ function collectRows(body, fields){
   return {items, invalidRows};
 }
 
+function collectSolutionRows(body){
+  const rows=[...body.querySelectorAll('tr')].filter(row => !row.querySelector('.empty'));
+  const items=[];
+  const invalidRows=[];
+  rows.forEach((row,index)=>{
+    row.classList.remove('invalid');
+    const item={
+      name: row.querySelector('[data-field="name"]')?.value.trim() || '',
+      endpoint: row.querySelector('[data-field="endpoint"]')?.value.trim() || '',
+      username: row.querySelector('[data-field="username"]')?.value.trim() || '',
+      password: row.querySelector('[data-field="password"]')?.value.trim() || '',
+      ssh_username: row.querySelector('[data-field="ssh_username"]')?.value.trim() || '',
+      ssh_password: row.querySelector('[data-field="ssh_password"]')?.value.trim() || '',
+      snmp_enabled: row.querySelector('[data-field="snmp_enabled"]')?.checked || false,
+      snmp_community: row.querySelector('[data-field="snmp_community"]')?.value.trim() || '',
+      snmp_port: Number(row.querySelector('[data-field="snmp_port"]')?.value || 161) || 161,
+      checkservice: row.querySelector('[data-field="checkservice"]')?.checked || false,
+    };
+
+    let invalid = false;
+    if(!item.name || !item.endpoint) invalid = true;
+    if(item.snmp_enabled && !item.snmp_community) invalid = true;
+
+    if(invalid){
+      row.classList.add('invalid');
+      invalidRows.push(index+1);
+    }
+    items.push(item);
+  });
+  return {items, invalidRows};
+}
+
+function emptySshRow(){ return '<tr><td colspan="5" class="empty">Chưa có dữ liệu.</td></tr>'; }
+function emptyWebRow(){ return '<tr><td colspan="2" class="empty">Chưa có dữ liệu.</td></tr>'; }
+function emptySolutionRow(){ return '<tr><td colspan="11" class="empty">Chưa có dữ liệu.</td></tr>'; }
+
 function renderSshDatabaseRows(items){
-  ssh.databaseBody.innerHTML = items.map(i=>`
+  const rows = (items || []).length ? items : [{ip:'', username:'', password:'', snmp_community:'public'}];
+  ssh.databaseBody.innerHTML = rows.map(i=>`
     <tr>
       <td><input type="text" data-field="ip" value="${esc(i.ip)}"></td>
       <td><input type="text" data-field="username" value="${esc(i.username)}"></td>
       <td><input type="text" data-field="password" value="${esc(i.password)}"></td>
-      <td><input type="text" data-field="snmp_community" value="${esc(i.snmp_community || '')}"></td>
+      <td><input type="text" data-field="snmp_community" value="${esc(i.snmp_community || 'public')}"></td>
+      <td><button type="button" class="btn-danger btn-delete-row">Xóa</button></td>
     </tr>
   `).join('');
+  bindDeleteRow(ssh.databaseBody, emptySshRow);
 }
 
 function renderWebDatabaseRows(items){
-  web.databaseBody.innerHTML = items.map(i=>`
+  const rows = (items || []).length ? items : [{domain:''}];
+  web.databaseBody.innerHTML = rows.map(i=>`
     <tr>
       <td><input type="text" data-field="domain" value="${esc(i.domain)}"></td>
+      <td><button type="button" class="btn-danger btn-delete-row">Xóa</button></td>
     </tr>
   `).join('');
+  bindDeleteRow(web.databaseBody, emptyWebRow);
 }
 
 function renderSolutionDatabaseRows(items){
-  solution.databaseBody.innerHTML = items.map(i=>`
+  const rows = (items || []).length ? items : [{name:'',endpoint:'',username:'',password:'',ssh_username:'',ssh_password:'',snmp_enabled:true,snmp_community:'public',snmp_port:161,checkservice:false}];
+  solution.databaseBody.innerHTML = rows.map(i=>`
     <tr>
       <td><input type="text" data-field="name" value="${esc(i.name)}"></td>
       <td><input type="text" data-field="endpoint" value="${esc(i.endpoint)}"></td>
@@ -263,45 +344,115 @@ function renderSolutionDatabaseRows(items){
       <td><input type="text" data-field="password" value="${esc(i.password)}"></td>
       <td><input type="text" data-field="ssh_username" value="${esc(i.ssh_username || '')}"></td>
       <td><input type="text" data-field="ssh_password" value="${esc(i.ssh_password || '')}"></td>
+      <td style="text-align:center;"><input type="checkbox" data-field="snmp_enabled" ${i.snmp_enabled !== false ? 'checked' : ''}></td>
       <td><input type="text" data-field="snmp_community" value="${esc(i.snmp_community || 'public')}"></td>
+      <td><input type="number" data-field="snmp_port" value="${esc(i.snmp_port || 161)}" min="1"></td>
       <td style="text-align:center;"><input type="checkbox" data-field="checkservice" ${i.checkservice ? 'checked' : ''}></td>
+      <td><button type="button" class="btn-danger btn-delete-row">Xóa</button></td>
     </tr>
   `).join('');
+  bindDeleteRow(solution.databaseBody, emptySolutionRow);
+}
+
+function setButtonLoading(btn, loadingText){
+  if(!btn) return;
+  if(!btn.dataset.originalText){
+    btn.dataset.originalText = btn.textContent;
+  }
+  btn.disabled = true;
+  btn.textContent = loadingText;
+}
+
+function resetButtonLoading(btn){
+  if(!btn) return;
+  btn.disabled = false;
+  btn.textContent = btn.dataset.originalText || 'Quét';
+}
+
+function replaceResultAt(items, index, nextItem){
+  const clone = Array.isArray(items) ? [...items] : [];
+  if(index < 0) return clone;
+  while(clone.length <= index){
+    clone.push(null);
+  }
+  clone[index] = nextItem;
+  return clone.filter(item => item !== null);
+}
+
+function recomputeThreeSummary(items){
+  const safeItems = Array.isArray(items) ? items : [];
+  const scannedItems = safeItems.filter(item => item && item.has_scanned);
+  const success = scannedItems.filter(item => item && item.is_success).length;
+  return { total: safeItems.length, success, failed: scannedItems.length - success };
+}
+
+function recomputeSolutionSummary(items){
+  const safeItems = Array.isArray(items) ? items : [];
+  const scannedItems = safeItems.filter(item => item && item.has_scanned);
+  const running = scannedItems.filter(item => item && item.is_running).length;
+  const login_success = scannedItems.filter(item => item && item.is_success).length;
+  const running_services = scannedItems.reduce((sum, item) => sum + Number(item?.service_running_count || 0), 0);
+  const total_services = scannedItems.reduce((sum, item) => sum + Number(item?.service_total_count || 0), 0);
+  return {
+    total: safeItems.length,
+    running,
+    login_success,
+    issues: scannedItems.length - login_success,
+    running_services,
+    total_services,
+  };
+}
+
+function buildSshPlaceholderResults(items){
+  return (items || []).map(item => ({ ip: item.ip || '', username: item.username || '', metric_source: '', cpu_percent: '', ram_percent: '', storage_percent: '', status: '', is_success: false, error: '', has_scanned: false }));
+}
+
+function buildWebPlaceholderResults(items){
+  return (items || []).map(item => ({ domain: item.domain || '', checked_url: '', http_status: '', status: '', is_success: false, error: '', has_scanned: false }));
+}
+
+function buildSolutionPlaceholderResults(items){
+  return (items || []).map(item => ({ name: item.name || '', endpoint: item.endpoint || '', username: item.username || '', checked_url: '', http_status: '', login_status: '', running_status: '', status: '', note: '', is_success: false, is_running: false, checkservice: !!item.checkservice, service_summary: '', services: [], cpu_percent: '', ram_percent: '', storage_percent: '', service_running_count: 0, service_total_count: 0, metric_source: '', has_scanned: false }));
 }
 
 function renderSshResults(items){
-  ssh.resultBody.innerHTML = items.length ? items.map(i=>`
+  sshResultsState = Array.isArray(items) ? items.map(i => ({has_scanned:true, ...i})) : [];
+  ssh.resultBody.innerHTML = sshResultsState.length ? sshResultsState.map((i,index)=>`
     <tr>
       <td>${esc(i.ip)}</td>
-      <td><span class="badge ${i.metric_source === 'SNMP' ? 'badge-info' : (i.metric_source === 'SSH' ? 'badge-muted' : 'badge-failed')}">${esc(i.metric_source || 'N/A')}</span></td>
+      <td>${i.has_scanned ? `<span class="badge ${String(i.metric_source || '').includes('150') ? 'badge-info' : (String(i.metric_source || '').includes('132') ? 'badge-info' : (i.metric_source === 'SSH' ? 'badge-muted' : (i.metric_source ? 'badge-success' : 'badge-failed')))}">${esc(i.metric_source || '')}</span>` : ''}</td>
       <td>${esc(i.username)}</td>
-      <td>${esc(i.cpu_percent)}</td>
-      <td>${esc(i.ram_percent)}</td>
-      <td>${esc(i.storage_percent)}</td>
-      <td><span class="badge ${i.is_success?'badge-success':'badge-failed'}" title="${esc(i.error || '')}">${esc(i.status)}</span></td>
+      <td>${esc(i.cpu_percent || '')}</td>
+      <td>${esc(i.ram_percent || '')}</td>
+      <td>${esc(i.storage_percent || '')}</td>
+      <td>${i.has_scanned ? `<span class="badge ${i.is_success?'badge-success':'badge-failed'}" title="${esc(i.error || '')}">${esc(i.status || '')}</span>` : ''}</td>
+      <td><button type="button" class="btn-secondary btn-single-scan" data-type="ssh" data-index="${index}">Quét</button></td>
     </tr>
-  `).join('') : '<tr><td colspan="7" class="empty">Chưa có dữ liệu.</td></tr>';
+  `).join('') : '<tr><td colspan="8" class="empty">Chưa có dữ liệu.</td></tr>';
 }
 
 function renderWebResults(items){
-  web.resultBody.innerHTML = items.length ? items.map(i=>`
+  webResultsState = Array.isArray(items) ? items.map(i => ({has_scanned:true, ...i})) : [];
+  web.resultBody.innerHTML = webResultsState.length ? webResultsState.map((i,index)=>`
     <tr>
       <td>${esc(i.domain)}</td>
-      <td class="mono">${esc(i.checked_url)}</td>
-      <td>${esc(i.http_status)}</td>
-      <td><span class="badge ${i.is_success?'badge-success':'badge-failed'}">${esc(i.status)}</span></td>
+      <td class="mono">${esc(i.checked_url || '')}</td>
+      <td>${esc(i.http_status || '')}</td>
+      <td>${i.has_scanned ? `<span class="badge ${i.is_success?'badge-success':'badge-failed'}">${esc(i.status || '')}</span>` : ''}</td>
+      <td><button type="button" class="btn-secondary btn-single-scan" data-type="web" data-index="${index}">Quét</button></td>
     </tr>
-  `).join('') : '<tr><td colspan="4" class="empty">Chưa có dữ liệu.</td></tr>';
+  `).join('') : '<tr><td colspan="5" class="empty">Chưa có dữ liệu.</td></tr>';
 }
 
 function renderSolutionResults(items){
-  if(!items.length){
-    solution.resultBody.innerHTML = '<tr><td colspan="8" class="empty">Chưa có dữ liệu.</td></tr>';
+  solutionResultsState = Array.isArray(items) ? items.map(i => ({has_scanned:true, ...i})) : [];
+  if(!solutionResultsState.length){
+    solution.resultBody.innerHTML = '<tr><td colspan="9" class="empty">Chưa có dữ liệu.</td></tr>';
     return;
   }
 
   const rows=[];
-  items.forEach((item, idx)=>{
+  solutionResultsState.forEach((item, idx)=>{
     const canExpand = item.checkservice && Array.isArray(item.services) && item.services.length > 0;
     const loginTitle = [item.http_status, item.checked_url, item.note].filter(Boolean).join(' | ');
     const runningTitle = item.service_total_count ? `${item.service_running_count || 0}/${item.service_total_count || 0} service running` : '';
@@ -320,19 +471,20 @@ function renderSolutionResults(items){
           </div>
         </td>
         <td class="mono">${esc(item.endpoint)}</td>
-        <td><span class="badge ${item.is_success ? 'badge-success' : 'badge-failed'}" title="${esc(loginTitle)}">${esc(item.login_status)}</span></td>
-        <td><span class="badge ${item.is_running ? 'badge-info' : 'badge-failed'}" title="${esc(runningTitle)}">${esc(item.running_status)}</span></td>
-        <td><span class="badge ${metricSourceClass}">${esc(item.metric_source || 'N/A')}</span></td>
-        <td>${esc(item.cpu_percent || 'N/A')}</td>
-        <td>${esc(item.ram_percent || 'N/A')}</td>
-        <td>${esc(item.storage_percent || 'N/A')}</td>
+        <td>${item.has_scanned ? `<span class="badge ${item.is_success ? 'badge-success' : 'badge-failed'}" title="${esc(loginTitle)}">${esc(item.login_status || '')}</span>` : ''}</td>
+        <td>${item.has_scanned ? `<span class="badge ${item.is_running ? 'badge-info' : 'badge-failed'}" title="${esc(runningTitle)}">${esc(item.running_status || '')}</span>` : ''}</td>
+        <td>${item.has_scanned ? `<span class="badge ${metricSourceClass}">${esc(item.metric_source || '')}</span>` : ''}</td>
+        <td>${esc(item.cpu_percent || '')}</td>
+        <td>${esc(item.ram_percent || '')}</td>
+        <td>${esc(item.storage_percent || '')}</td>
+        <td><button type="button" class="btn-secondary btn-single-scan" data-type="solution" data-index="${idx}">Quét</button></td>
       </tr>
     `);
 
     if(canExpand){
       rows.push(`
         <tr class="service-row hidden" id="svc-${idx}">
-          <td colspan="8">
+          <td colspan="9">
             <div class="service-wrap">
               ${item.services.map(s=>`
                 <div class="service-item">
@@ -361,34 +513,64 @@ function renderSolutionResults(items){
 }
 
 async function loadSshDatabase(){
-  ssh.databaseBody.innerHTML = '<tr><td colspan="4" class="empty">Đang tải database SSH...</td></tr>';
+  ssh.databaseBody.innerHTML = '<tr><td colspan="5" class="empty">Đang tải database SSH...</td></tr>';
   const data = await apiGet('/api/database');
-  renderSshDatabaseRows(data.servers || []);
+  const items = data.servers || [];
+  renderSshDatabaseRows(items);
+  sshResultsState = buildSshPlaceholderResults(items);
+  ssh.resultBody.innerHTML = '';
+  renderSshResults(sshResultsState);
 }
 
 async function loadWebDatabase(){
-  web.databaseBody.innerHTML = '<tr><td class="empty">Đang tải database website...</td></tr>';
+  web.databaseBody.innerHTML = '<tr><td colspan="2" class="empty">Đang tải database website...</td></tr>';
   const data = await apiGet('/api/web-database');
-  renderWebDatabaseRows(data.websites || []);
+  const items = data.websites || [];
+  renderWebDatabaseRows(items);
+  webResultsState = buildWebPlaceholderResults(items);
+  web.resultBody.innerHTML = '';
+  renderWebResults(webResultsState);
 }
 
 async function loadSolutionDatabase(){
-  solution.databaseBody.innerHTML = '<tr><td colspan="8" class="empty">Đang tải database giải pháp...</td></tr>';
+  solution.databaseBody.innerHTML = '<tr><td colspan="11" class="empty">Đang tải database giải pháp...</td></tr>';
   const data = await apiGet('/api/solution-database');
-  renderSolutionDatabaseRows(data.solutions || []);
+  const items = data.solutions || [];
+  renderSolutionDatabaseRows(items);
+  solutionResultsState = buildSolutionPlaceholderResults(items);
+  solution.resultBody.innerHTML = '';
+  renderSolutionResults(solutionResultsState);
+}
+
+function addSshRow(){
+  const items = collectRows(ssh.databaseBody,['ip','username','password','snmp_community']).items;
+  items.push({ip:'', username:'', password:'', snmp_community:'public'});
+  renderSshDatabaseRows(items);
+}
+
+function addWebRow(){
+  const items = collectRows(web.databaseBody,['domain']).items;
+  items.push({domain:''});
+  renderWebDatabaseRows(items);
+}
+
+function addSolutionRow(){
+  const items = collectSolutionRows(solution.databaseBody).items;
+  items.push({name:'',endpoint:'',username:'',password:'',ssh_username:'',ssh_password:'',snmp_enabled:true,snmp_community:'public',snmp_port:161,checkservice:false});
+  renderSolutionDatabaseRows(items);
 }
 
 async function saveSshDatabase(){
   clearMessage(ssh.messageBox);
   const {items,invalidRows}=collectRows(ssh.databaseBody,['ip','username','password','snmp_community']);
-  if(invalidRows.length){
-    showMessage(ssh.messageBox,`Các dòng SSH ${invalidRows.join(', ')} đang thiếu IP, username, password hoặc SNMP CommunityString.`,'error');
-    return;
-  }
+  if(!items.length){ showMessage(ssh.messageBox,'Database SSH phải có ít nhất 1 dòng.','error'); return; }
+  if(invalidRows.length){ showMessage(ssh.messageBox,`Các dòng SSH ${invalidRows.join(', ')} đang thiếu IP, username, password hoặc SNMP CommunityString.`,'error'); return; }
   ssh.saveDbBtn.disabled=true;
   try {
     const data=await apiPost('/api/database',{servers:items});
     renderSshDatabaseRows(data.servers || []);
+    sshResultsState = buildSshPlaceholderResults(data.servers || []);
+    renderSshResults(sshResultsState);
     showMessage(ssh.messageBox, data.message || 'Đã lưu database SSH thành công.','success');
   } catch(e){
     showMessage(ssh.messageBox,e.message || 'Không lưu được database SSH.','error');
@@ -400,14 +582,14 @@ async function saveSshDatabase(){
 async function saveWebDatabase(){
   clearMessage(web.messageBox);
   const {items,invalidRows}=collectRows(web.databaseBody,['domain']);
-  if(invalidRows.length){
-    showMessage(web.messageBox,`Các dòng website ${invalidRows.join(', ')} đang thiếu domain.`,'error');
-    return;
-  }
+  if(!items.length){ showMessage(web.messageBox,'Database website phải có ít nhất 1 dòng.','error'); return; }
+  if(invalidRows.length){ showMessage(web.messageBox,`Các dòng website ${invalidRows.join(', ')} đang thiếu domain.`,'error'); return; }
   web.saveDbBtn.disabled=true;
   try {
     const data=await apiPost('/api/web-database',{websites:items});
     renderWebDatabaseRows(data.websites || []);
+    webResultsState = buildWebPlaceholderResults(data.websites || []);
+    renderWebResults(webResultsState);
     showMessage(web.messageBox, data.message || 'Đã lưu database website thành công.','success');
   } catch(e){
     showMessage(web.messageBox,e.message || 'Không lưu được database website.','error');
@@ -418,15 +600,15 @@ async function saveWebDatabase(){
 
 async function saveSolutionDatabase(){
   clearMessage(solution.messageBox);
-  const {items,invalidRows}=collectRows(solution.databaseBody,['name','endpoint','username','password','ssh_username','ssh_password','snmp_community','checkservice']);
-  if(invalidRows.length){
-    showMessage(solution.messageBox,`Các dòng giải pháp ${invalidRows.join(', ')} đang thiếu tên, endpoint, user/pass giao diện, user/pass SSH hoặc SNMP CommunityString.`,'error');
-    return;
-  }
+  const {items,invalidRows}=collectSolutionRows(solution.databaseBody);
+  if(!items.length){ showMessage(solution.messageBox,'Database giải pháp phải có ít nhất 1 dòng.','error'); return; }
+  if(invalidRows.length){ showMessage(solution.messageBox,`Các dòng giải pháp ${invalidRows.join(', ')} đang thiếu tên, endpoint hoặc SNMP CommunityString khi SNMP đang bật.`,'error'); return; }
   solution.saveDbBtn.disabled=true;
   try {
     const data=await apiPost('/api/solution-database',{solutions:items});
     renderSolutionDatabaseRows(data.solutions || []);
+    solutionResultsState = buildSolutionPlaceholderResults(data.solutions || []);
+    renderSolutionResults(solutionResultsState);
     showMessage(solution.messageBox, data.message || 'Đã lưu database giải pháp thành công.','success');
   } catch(e){
     showMessage(solution.messageBox,e.message || 'Không lưu được database giải pháp.','error');
@@ -438,7 +620,7 @@ async function saveSolutionDatabase(){
 async function scanSsh(){
   clearMessage(ssh.messageBox);
   ssh.scanBtn.disabled=true;
-  showMessage(ssh.messageBox,'Đang quét server: SNMP trước, lỗi thì fallback sang SSH...','info');
+  showMessage(ssh.messageBox,'Đang quét server theo cơ chế đa luồng: SSH vào 150 chạy SNMP -> lỗi thì 132 -> lỗi thì SSH vào máy đích...','info');
   try {
     const data=await apiPost('/api/scan');
     renderThreeStatSummary(ssh,data.summary||{});
@@ -454,7 +636,7 @@ async function scanSsh(){
 async function scanWebsites(){
   clearMessage(web.messageBox);
   web.scanBtn.disabled=true;
-  showMessage(web.messageBox,'Đang quét 5 domain trong database website...','info');
+  showMessage(web.messageBox,'Đang quét website bằng đa luồng với timeout ngắn hơn để phản hồi nhanh...','info');
   try {
     const data=await apiPost('/api/web-scan');
     renderThreeStatSummary(web,data.summary||{});
@@ -470,7 +652,7 @@ async function scanWebsites(){
 async function scanSolutions(){
   clearMessage(solution.messageBox);
   solution.scanBtn.disabled=true;
-  showMessage(solution.messageBox,'Đang quét giải pháp theo thứ tự SNMP → SSH → Giao diện...','info');
+  showMessage(solution.messageBox,'Đang quét giải pháp theo thứ tự 150 chạy SNMP -> 132 chạy SNMP -> SSH máy đích -> WEB, chạy đa luồng để giảm thời gian chờ...','info');
   try {
     const data=await apiPost('/api/solution-scan');
     renderSolutionSummary(data.summary||{});
@@ -483,38 +665,95 @@ async function scanSolutions(){
   }
 }
 
-ssh.toggleDbBtn.addEventListener('click', async ()=>{
+async function scanSingle(type, index, btn){
+  const config = {
+    ssh: {
+      url: '/api/scan-one',
+      box: ssh.messageBox,
+      loadingText: 'Đang quét...',
+      successText: (result) => `Đã quét riêng server ${result.ip || `#${index + 1}`}.`,
+      apply(result){
+        sshResultsState = replaceResultAt(sshResultsState, index, {has_scanned:true, ...result});
+        renderSshResults(sshResultsState);
+        renderThreeStatSummary(ssh, recomputeThreeSummary(sshResultsState));
+      },
+    },
+    web: {
+      url: '/api/web-scan-one',
+      box: web.messageBox,
+      loadingText: 'Đang quét...',
+      successText: (result) => `Đã quét riêng website ${result.domain || `#${index + 1}`}.`,
+      apply(result){
+        webResultsState = replaceResultAt(webResultsState, index, {has_scanned:true, ...result});
+        renderWebResults(webResultsState);
+        renderThreeStatSummary(web, recomputeThreeSummary(webResultsState));
+      },
+    },
+    solution: {
+      url: '/api/solution-scan-one',
+      box: solution.messageBox,
+      loadingText: 'Đang quét...',
+      successText: (result) => `Đã quét riêng giải pháp ${result.name || `#${index + 1}`}.`,
+      apply(result){
+        solutionResultsState = replaceResultAt(solutionResultsState, index, {has_scanned:true, ...result});
+        renderSolutionResults(solutionResultsState);
+        renderSolutionSummary(recomputeSolutionSummary(solutionResultsState));
+      },
+    },
+  }[type];
+
+  if(!config) return;
+
+  clearMessage(config.box);
+  setButtonLoading(btn, config.loadingText);
   try {
-    await setDatabaseVisible(ssh, ssh.databaseCard.classList.contains('hidden'), loadSshDatabase, 'Xem database SSH', 'Ẩn database SSH');
-  } catch(e){
-    showMessage(ssh.messageBox,e.message || 'Không tải được database SSH.','error');
+    const data = await apiPost(config.url, {index});
+    config.apply(data.result);
+    showMessage(config.box, config.successText(data.result), 'success');
+  } catch (e) {
+    showMessage(config.box, e.message || 'Không quét riêng được dòng này.', 'error');
+  } finally {
+    resetButtonLoading(btn);
   }
+}
+
+document.addEventListener('click', (event) => {
+  const btn = event.target.closest('.btn-single-scan');
+  if(!btn) return;
+  const type = btn.dataset.type;
+  const index = Number(btn.dataset.index);
+  if(Number.isNaN(index)) return;
+  scanSingle(type, index, btn);
+});
+
+ssh.toggleDbBtn.addEventListener('click', async ()=>{
+  try { await setDatabaseVisible(ssh, ssh.databaseCard.classList.contains('hidden'), loadSshDatabase, 'Xem database SSH', 'Ẩn database SSH'); }
+  catch(e){ showMessage(ssh.messageBox,e.message || 'Không tải được database SSH.','error'); }
 });
 ssh.hideDbBtn.addEventListener('click', async ()=> setDatabaseVisible(ssh,false,loadSshDatabase,'Xem database SSH','Ẩn database SSH'));
 ssh.saveDbBtn.addEventListener('click', saveSshDatabase);
 ssh.scanBtn.addEventListener('click', scanSsh);
+ssh.addRowBtn.addEventListener('click', addSshRow);
 
 web.toggleDbBtn.addEventListener('click', async ()=>{
-  try {
-    await setDatabaseVisible(web, web.databaseCard.classList.contains('hidden'), loadWebDatabase, 'Xem database website', 'Ẩn database website');
-  } catch(e){
-    showMessage(web.messageBox,e.message || 'Không tải được database website.','error');
-  }
+  try { await setDatabaseVisible(web, web.databaseCard.classList.contains('hidden'), loadWebDatabase, 'Xem database website', 'Ẩn database website'); }
+  catch(e){ showMessage(web.messageBox,e.message || 'Không tải được database website.','error'); }
 });
 web.hideDbBtn.addEventListener('click', async ()=> setDatabaseVisible(web,false,loadWebDatabase,'Xem database website','Ẩn database website'));
 web.saveDbBtn.addEventListener('click', saveWebDatabase);
 web.scanBtn.addEventListener('click', scanWebsites);
+web.addRowBtn.addEventListener('click', addWebRow);
 
 solution.toggleDbBtn.addEventListener('click', async ()=>{
-  try {
-    await setDatabaseVisible(solution, solution.databaseCard.classList.contains('hidden'), loadSolutionDatabase, 'Xem database giải pháp', 'Ẩn database giải pháp');
-  } catch(e){
-    showMessage(solution.messageBox,e.message || 'Không tải được database giải pháp.','error');
-  }
+  try { await setDatabaseVisible(solution, solution.databaseCard.classList.contains('hidden'), loadSolutionDatabase, 'Xem database giải pháp', 'Ẩn database giải pháp'); }
+  catch(e){ showMessage(solution.messageBox,e.message || 'Không tải được database giải pháp.','error'); }
 });
 solution.hideDbBtn.addEventListener('click', async ()=> setDatabaseVisible(solution,false,loadSolutionDatabase,'Xem database giải pháp','Ẩn database giải pháp'));
 solution.saveDbBtn.addEventListener('click', saveSolutionDatabase);
 solution.scanBtn.addEventListener('click', scanSolutions);
+solution.addRowBtn.addEventListener('click', addSolutionRow);
+
+Promise.allSettled([loadSshDatabase(), loadWebDatabase(), loadSolutionDatabase()]);
 </script>
 </body>
 </html>

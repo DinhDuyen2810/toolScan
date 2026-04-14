@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import html as html_lib
 import json
+import logging
 import os
 import re
+import shlex
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable
@@ -43,6 +47,9 @@ except Exception:
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 app = Flask(__name__)
+
+logging.basicConfig(level=os.getenv('LOGIN_LOG_LEVEL', 'INFO').upper(), format='[%(asctime)s] %(levelname)s %(message)s')
+logger = logging.getLogger('toolscan-login')
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / 'data'
@@ -241,6 +248,12 @@ CPU_RE = re.compile(r'CPU=([-]?[0-9]+(?:[.,][0-9]+)?)')
 RAM_RE = re.compile(r'RAM=([-]?[0-9]+(?:[.,][0-9]+)?)')
 STORAGE_RE = re.compile(r'STORAGE=([-]?[0-9]+(?:[.,][0-9]+)?)')
 PASSWORD_INPUT_RE = re.compile(r'<input[^>]+type=["\']?password', re.IGNORECASE)
+JSON_LOGIN_ENDPOINT_RE = re.compile(r"(?:fetch|axios\.(?:post|request)|\$\.ajax)\s*\(?\s*['\"]([^'\"]*(?:login|signin|auth)[^'\"]*)['\"]", re.IGNORECASE)
+JSON_LOGIN_URL_FIELD_RE = re.compile(r"url\s*:\s*['\"]([^'\"]*(?:login|signin|auth)[^'\"]*)['\"]", re.IGNORECASE)
+JSON_LOGIN_KEYS_RE = re.compile(r"JSON\.stringify\s*\(\s*\{(?P<body>.*?)\}\s*\)", re.IGNORECASE | re.DOTALL)
+REDIRECT_PATH_RE = re.compile(r"(?:window\.location(?:\.href)?\s*=|redirect\s*[:=])\s*['\"]([^'\"]+)['\"]", re.IGNORECASE)
+GENERIC_POST_LOGIN_PATHS = ['/default/system/status', '/system/status', '/dashboard', '/status', '/overview', '/home', '/index', '/main']
+JSON_SUCCESS_KEYS = ('success', 'ok', 'authenticated', 'is_authenticated', 'logged_in')
 USERNAME_HINTS = ('user', 'username', 'login', 'email', 'mail', 'account', 'uid')
 PASSWORD_HINTS = ('pass', 'password', 'passwd', 'pwd')
 LOGIN_WORDS = ('login', 'log in', 'sign in', 'đăng nhập', 'authentication')
@@ -251,6 +264,51 @@ DEFAULT_HEADERS = {
         'Chrome/128.0 Safari/537.36'
     )
 }
+
+
+MAX_SSH_SCAN_WORKERS = int(os.getenv('MAX_SSH_SCAN_WORKERS', '10'))
+MAX_WEB_SCAN_WORKERS = int(os.getenv('MAX_WEB_SCAN_WORKERS', '20'))
+MAX_SOLUTION_SCAN_WORKERS = int(os.getenv('MAX_SOLUTION_SCAN_WORKERS', '8'))
+WEBSITE_CONNECT_TIMEOUT = float(os.getenv('WEBSITE_CONNECT_TIMEOUT', '3'))
+WEBSITE_READ_TIMEOUT = float(os.getenv('WEBSITE_READ_TIMEOUT', '5'))
+SOLUTION_HTTP_TIMEOUT = float(os.getenv('SOLUTION_HTTP_TIMEOUT', '15'))
+LOGIN_TRACE_LIMIT = int(os.getenv('LOGIN_TRACE_LIMIT', '200'))
+
+
+def _compact(value: Any, limit: int = 220) -> str:
+    try:
+        text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
+    except Exception:
+        text = repr(value)
+    text = text.replace('\n', ' ').replace('\r', ' ').strip()
+    return text[:limit] + ('…' if len(text) > limit else '')
+
+
+def append_login_debug(debug_steps: list[str] | None, stage: str, message: str, **fields: Any) -> None:
+    entry = f'[{stage}] {message}'
+    if fields:
+        entry += ' | ' + ', '.join(f"{key}={_compact(value)}" for key, value in fields.items() if value not in (None, ''))
+    logger.info(entry)
+    if debug_steps is not None and len(debug_steps) < LOGIN_TRACE_LIMIT:
+        debug_steps.append(entry)
+
+
+def attach_login_debug(result: dict[str, Any], debug_steps: list[str] | None) -> dict[str, Any]:
+    result['login_debug'] = debug_steps or []
+    return result
+
+SSH_CONNECT_TIMEOUT = float(os.getenv('SSH_CONNECT_TIMEOUT', '5'))
+SSH_COMMAND_TIMEOUT = float(os.getenv('SSH_COMMAND_TIMEOUT', '10'))
+SNMP_DEFAULT_TIMEOUT = int(os.getenv('SNMP_DEFAULT_TIMEOUT', '1'))
+SNMP_DEFAULT_RETRIES = int(os.getenv('SNMP_DEFAULT_RETRIES', '0'))
+PROXY_SNMP_USERNAME = os.getenv('PROXY_SNMP_USERNAME', 'root')
+PROXY_SNMP_PASSWORD = os.getenv('PROXY_SNMP_PASSWORD', 'Vipstmt@828912')
+PROXY_SNMP_HOPS = [
+    {'host': os.getenv('PROXY_SNMP_HOST_1', '163.223.58.150'), 'username': PROXY_SNMP_USERNAME, 'password': PROXY_SNMP_PASSWORD, 'label': 'SNMP@150'},
+    {'host': os.getenv('PROXY_SNMP_HOST_2', '163.223.58.132'), 'username': PROXY_SNMP_USERNAME, 'password': PROXY_SNMP_PASSWORD, 'label': 'SNMP@132'},
+]
+
+_thread_local = threading.local()
 
 
 def parse_float_loose(value: str) -> float:
@@ -282,8 +340,8 @@ def normalize_server(raw: dict[str, Any]) -> dict[str, str]:
 
 def validate_servers(servers: list[dict[str, Any]]) -> list[dict[str, str]]:
     cleaned = [normalize_server(item) for item in servers]
-    if len(cleaned) != 5:
-        raise ValueError('Database SSH phải có đúng 5 dòng máy.')
+    if not cleaned:
+        raise ValueError('Database SSH phải có ít nhất 1 dòng máy.')
     for index, server in enumerate(cleaned, start=1):
         if not (server['ip'] and server['username'] and server['password'] and server['snmp_community']):
             raise ValueError(f'Dòng SSH {index} đang thiếu IP, username, password hoặc SNMP CommunityString.')
@@ -297,8 +355,8 @@ def normalize_website(raw: Any) -> dict[str, str]:
 
 def validate_websites(websites: list[Any]) -> list[dict[str, str]]:
     cleaned = [normalize_website(item) for item in websites]
-    if len(cleaned) != 5:
-        raise ValueError('Database website phải có đúng 5 dòng domain.')
+    if not cleaned:
+        raise ValueError('Database website phải có ít nhất 1 dòng domain.')
     for index, website in enumerate(cleaned, start=1):
         if not website['domain']:
             raise ValueError(f'Dòng website {index} đang thiếu domain.')
@@ -325,8 +383,8 @@ def normalize_solution(raw: dict[str, Any]) -> dict[str, Any]:
         'snmp_port': int(str(raw.get('snmp_port', raw.get('port', 161)) or '161')),
         'snmp_version': str(raw.get('snmp_version', raw.get('version', '2c'))).strip().lower() or '2c',
         'snmp_community': str(raw.get('snmp_community', raw.get('community', 'public'))).strip() or 'public',
-        'snmp_timeout': int(str(raw.get('snmp_timeout', 2)) or '2'),
-        'snmp_retries': int(str(raw.get('snmp_retries', 0)) or '0'),
+        'snmp_timeout': int(str(raw.get('snmp_timeout', SNMP_DEFAULT_TIMEOUT)) or str(SNMP_DEFAULT_TIMEOUT)),
+        'snmp_retries': int(str(raw.get('snmp_retries', SNMP_DEFAULT_RETRIES)) or str(SNMP_DEFAULT_RETRIES)),
     }
 
 
@@ -335,17 +393,10 @@ def validate_solutions(solutions: list[dict[str, Any]]) -> list[dict[str, Any]]:
     if not cleaned:
         raise ValueError('Database giải pháp phải có ít nhất 1 dòng.')
     for index, solution in enumerate(cleaned, start=1):
-        if not (
-            solution['name']
-            and solution['endpoint']
-            and solution['username']
-            and solution['password']
-            and solution['snmp_community']
-        ):
-            raise ValueError(
-                f'Dòng giải pháp {index} đang thiếu tên, endpoint, '
-                f'username/password giao diện hoặc SNMP CommunityString.'
-            )
+        if not solution['name'] or not solution['endpoint']:
+            raise ValueError(f'Dòng giải pháp {index} đang thiếu tên hoặc endpoint.')
+        if solution.get('snmp_enabled') and not solution.get('snmp_community'):
+            raise ValueError(f'Dòng giải pháp {index} đã bật SNMP nhưng thiếu SNMP CommunityString.')
     return cleaned
 
 
@@ -462,10 +513,31 @@ def update_solution_database() -> Any:
     return jsonify({'message': 'Đã lưu database giải pháp thành công.', 'solutions': solutions})
 
 
+
+
+def _parse_scan_index() -> int:
+    payload = request.get_json(silent=True) or {}
+    raw_index = payload.get('index')
+    if raw_index is None:
+        raise ValueError('Thiếu index của dòng cần quét.')
+    try:
+        index = int(raw_index)
+    except (TypeError, ValueError):
+        raise ValueError('Index cần là số nguyên hợp lệ.')
+    if index < 0:
+        raise ValueError('Index phải lớn hơn hoặc bằng 0.')
+    return index
+
+
+def _pick_item_by_index(items: list[dict[str, Any]], index: int, label: str) -> dict[str, Any]:
+    if index >= len(items):
+        raise ValueError(f'Không tìm thấy dòng {index + 1} trong database {label}.')
+    return items[index]
+
 @app.post('/api/scan')
 def scan_servers() -> Any:
     servers = load_servers()
-    results = run_parallel_checks(servers, check_one_server)
+    results = run_parallel_checks(servers, check_one_server, max_workers=MAX_SSH_SCAN_WORKERS)
     success_count = sum(1 for item in results if item['is_success'])
     return jsonify({
         'results': results,
@@ -480,7 +552,7 @@ def scan_servers() -> Any:
 @app.post('/api/web-scan')
 def scan_websites() -> Any:
     websites = load_websites()
-    results = run_parallel_checks(websites, check_one_website)
+    results = run_parallel_checks(websites, check_one_website, max_workers=MAX_WEB_SCAN_WORKERS)
     success_count = sum(1 for item in results if item['is_success'])
     return jsonify({
         'results': results,
@@ -495,7 +567,7 @@ def scan_websites() -> Any:
 @app.post('/api/solution-scan')
 def scan_solutions() -> Any:
     solutions = load_solutions()
-    results = run_parallel_checks(solutions, check_one_solution)
+    results = run_parallel_checks(solutions, check_one_solution, max_workers=MAX_SOLUTION_SCAN_WORKERS)
     running_count = sum(1 for item in results if item['is_running'])
     login_success_count = sum(1 for item in results if item['is_success'])
     issue_count = len(results) - login_success_count
@@ -514,12 +586,61 @@ def scan_solutions() -> Any:
     })
 
 
+@app.post('/api/scan-one')
+def scan_one_server_route() -> Any:
+    try:
+        index = _parse_scan_index()
+        servers = load_servers()
+        server = _pick_item_by_index(servers, index, 'SSH')
+        _, result = check_one_server(index, server)
+    except ValueError as exc:
+        return jsonify({'error': str(exc)}), 400
+    except Exception as exc:
+        return jsonify({'error': f'Lỗi khi quét riêng server: {exc}'}), 500
+
+    return jsonify({'index': index, 'result': result})
+
+
+@app.post('/api/web-scan-one')
+def scan_one_website_route() -> Any:
+    try:
+        index = _parse_scan_index()
+        websites = load_websites()
+        website = _pick_item_by_index(websites, index, 'website')
+        _, result = check_one_website(index, website)
+    except ValueError as exc:
+        return jsonify({'error': str(exc)}), 400
+    except Exception as exc:
+        return jsonify({'error': f'Lỗi khi quét riêng website: {exc}'}), 500
+
+    return jsonify({'index': index, 'result': result})
+
+
+@app.post('/api/solution-scan-one')
+def scan_one_solution_route() -> Any:
+    try:
+        index = _parse_scan_index()
+        solutions = load_solutions()
+        solution = _pick_item_by_index(solutions, index, 'giải pháp')
+        _, result = check_one_solution(index, solution)
+    except ValueError as exc:
+        return jsonify({'error': str(exc)}), 400
+    except Exception as exc:
+        return jsonify({'error': f'Lỗi khi quét riêng giải pháp: {exc}'}), 500
+
+    return jsonify({'index': index, 'result': result})
+
+
 def run_parallel_checks(
     items: list[dict[str, Any]],
     checker: Callable[[int, dict[str, Any]], tuple[int, dict[str, Any]]],
+    max_workers: int | None = None,
 ) -> list[dict[str, Any]]:
     results: list[dict[str, Any] | None] = [None] * len(items)
-    max_workers = min(6, len(items)) or 1
+    if max_workers is None:
+        max_workers = min(16, max(4, len(items))) or 1
+    else:
+        max_workers = max(1, min(int(max_workers), max(1, len(items))))
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_map = {
@@ -528,19 +649,120 @@ def run_parallel_checks(
         }
         for future in as_completed(future_map):
             index = future_map[future]
+            src_item = items[index]
             try:
                 _, result = future.result()
             except Exception as exc:
-                item = items[index]
                 result = {
-                    'name': item.get('name') or item.get('ip') or item.get('domain') or f'item-{index + 1}',
+                    'name': src_item.get('name') or src_item.get('ip') or src_item.get('domain') or f'item-{index + 1}',
                     'status': 'Lỗi xử lý',
                     'is_success': False,
                     'error': str(exc),
+                    'login_method': None,
+                    'login_debug': [f'run_parallel_checks exception: {exc}'],
                 }
             results[index] = result
 
     return [item for item in results if item is not None]
+
+
+def ssh_exec_command(host: str, username: str, password: str, command: str, timeout: float = SSH_COMMAND_TIMEOUT) -> tuple[str, str, int]:
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        client.connect(
+            hostname=host,
+            port=22,
+            username=username,
+            password=password,
+            timeout=SSH_CONNECT_TIMEOUT,
+            auth_timeout=SSH_CONNECT_TIMEOUT,
+            banner_timeout=SSH_CONNECT_TIMEOUT,
+            look_for_keys=False,
+            allow_agent=False,
+        )
+        stdin, stdout, stderr = client.exec_command(command, timeout=timeout)
+        _ = stdin
+        stdout_text = stdout.read().decode('utf-8', errors='ignore')
+        stderr_text = stderr.read().decode('utf-8', errors='ignore')
+        exit_code = stdout.channel.recv_exit_status()
+        return stdout_text, stderr_text, exit_code
+    finally:
+        client.close()
+
+
+def remote_snmp_get_values_via_ssh(
+    proxy_host: str,
+    proxy_username: str,
+    proxy_password: str,
+    target_host: str,
+    community: str,
+    port: int,
+    oid_list: list[str],
+) -> dict[str, str]:
+    if not oid_list:
+        return {}
+
+    target_arg = shlex.quote(f'{target_host}:{int(port)}')
+    community_arg = shlex.quote(str(community))
+    oid_args = ' '.join(shlex.quote(str(oid)) for oid in oid_list)
+    command = (
+        'sh -lc ' + shlex.quote(
+            f'snmpget -v2c -c {community_arg} -On -Oqv -t {SNMP_DEFAULT_TIMEOUT} -r {SNMP_DEFAULT_RETRIES} {target_arg} {oid_args}'
+        )
+    )
+
+    stdout_text, stderr_text, exit_code = ssh_exec_command(proxy_host, proxy_username, proxy_password, command)
+    if exit_code != 0:
+        raise RuntimeError(stderr_text.strip() or f'snmpget lỗi trên {proxy_host}')
+
+    lines = [line.strip() for line in stdout_text.splitlines() if line.strip()]
+    if len(lines) != len(oid_list):
+        raise RuntimeError(f'snmpget trả về {len(lines)} dòng, cần {len(oid_list)} dòng')
+    return {oid: value for oid, value in zip(oid_list, lines)}
+
+
+def fetch_metrics_via_proxy_snmp(target_host: str, community: str, port: int) -> tuple[dict[str, float], str, str]:
+    oid_list = [
+        '1.3.6.1.4.1.2021.11.11.0',
+        '1.3.6.1.4.1.2021.4.5.0',
+        '1.3.6.1.4.1.2021.4.6.0',
+        '1.3.6.1.4.1.2021.4.15.0',
+        '1.3.6.1.4.1.2021.4.14.0',
+        '1.3.6.1.2.1.25.2.3.1.5.41',
+        '1.3.6.1.2.1.25.2.3.1.6.41',
+    ]
+    errors: list[str] = []
+    for hop in PROXY_SNMP_HOPS:
+        try:
+            oid_values = remote_snmp_get_values_via_ssh(
+                proxy_host=hop['host'],
+                proxy_username=hop['username'],
+                proxy_password=hop['password'],
+                target_host=target_host,
+                community=community,
+                port=port,
+                oid_list=oid_list,
+            )
+            cpu_idle = parse_snmp_numeric(oid_values['1.3.6.1.4.1.2021.11.11.0'])
+            mem_total_real = parse_snmp_numeric(oid_values['1.3.6.1.4.1.2021.4.5.0'])
+            mem_avail_real = parse_snmp_numeric(oid_values['1.3.6.1.4.1.2021.4.6.0'])
+            mem_cached = parse_snmp_numeric(oid_values['1.3.6.1.4.1.2021.4.15.0'])
+            mem_buffer = parse_snmp_numeric(oid_values['1.3.6.1.4.1.2021.4.14.0'])
+            storage_size = parse_snmp_numeric(oid_values['1.3.6.1.2.1.25.2.3.1.5.41'])
+            storage_used = parse_snmp_numeric(oid_values['1.3.6.1.2.1.25.2.3.1.6.41'])
+            if mem_total_real <= 0:
+                raise RuntimeError('memTotalReal <= 0')
+            if storage_size <= 0:
+                raise RuntimeError('hrStorageSize <= 0')
+            cpu_percent = max(0.0, min(100.0, 100.0 - cpu_idle))
+            ram_used = mem_total_real - mem_avail_real - mem_cached - mem_buffer
+            ram_percent = max(0.0, min(100.0, (ram_used / mem_total_real) * 100.0))
+            storage_percent = max(0.0, min(100.0, (storage_used / storage_size) * 100.0))
+            return ({'cpu': cpu_percent, 'ram': ram_percent, 'storage': storage_percent}, hop['label'], f"{hop['label']} -> {target_host}:{port}")
+        except Exception as exc:
+            errors.append(f"{hop['label']}: {exc}")
+    raise RuntimeError('; '.join(errors) or 'proxy snmp failed')
 
 
 def log_server_metric_source(ip: str, source: str, message: str, metrics: dict[str, float] | None = None) -> None:
@@ -614,92 +836,10 @@ def snmp_walk_values(host: str, community: str, port: int, timeout: int, retries
     return results
 
 
-def fetch_server_metrics_snmp(server: dict[str, Any]) -> dict[str, float]:
+def fetch_server_metrics_snmp(server: dict[str, Any]) -> tuple[dict[str, float], str, str]:
     ip = server['ip']
-    community = server['snmp_community']
-
-    if not snmp_supported():
-        raise RuntimeError('pysnmp chưa được cài hoặc không khả dụng.')
-
-    oid_values = snmp_get_values(
-        host=ip,
-        community=community,
-        port=161,
-        timeout=2,
-        retries=0,
-        oid_list=[
-            '1.3.6.1.4.1.2021.11.11.0',
-            '1.3.6.1.4.1.2021.4.5.0',
-            '1.3.6.1.4.1.2021.4.6.0',
-            '1.3.6.1.4.1.2021.4.15.0',
-            '1.3.6.1.4.1.2021.4.14.0',
-            '1.3.6.1.2.1.25.2.3.1.5.41',
-            '1.3.6.1.2.1.25.2.3.1.6.41',
-        ],
-    )
-
-    required_oids = [
-        '1.3.6.1.4.1.2021.11.11.0',
-        '1.3.6.1.4.1.2021.4.5.0',
-        '1.3.6.1.4.1.2021.4.6.0',
-        '1.3.6.1.4.1.2021.4.15.0',
-        '1.3.6.1.4.1.2021.4.14.0',
-        '1.3.6.1.2.1.25.2.3.1.5.41',
-        '1.3.6.1.2.1.25.2.3.1.6.41',
-    ]
-    missing = [oid for oid in required_oids if oid not in oid_values]
-    if missing:
-        raise RuntimeError(f'SNMP thiếu OID: {", ".join(missing)}')
-
-    cpu_idle = parse_snmp_numeric(oid_values['1.3.6.1.4.1.2021.11.11.0'])
-    mem_total_real = parse_snmp_numeric(oid_values['1.3.6.1.4.1.2021.4.5.0'])
-    mem_avail_real = parse_snmp_numeric(oid_values['1.3.6.1.4.1.2021.4.6.0'])
-    mem_cached = parse_snmp_numeric(oid_values['1.3.6.1.4.1.2021.4.15.0'])
-    mem_buffer = parse_snmp_numeric(oid_values['1.3.6.1.4.1.2021.4.14.0'])
-    storage_size = parse_snmp_numeric(oid_values['1.3.6.1.2.1.25.2.3.1.5.41'])
-    storage_used = parse_snmp_numeric(oid_values['1.3.6.1.2.1.25.2.3.1.6.41'])
-
-    if mem_total_real <= 0:
-        raise RuntimeError('memTotalReal <= 0')
-    if storage_size <= 0:
-        raise RuntimeError('hrStorageSize <= 0')
-
-    cpu_percent = max(0.0, min(100.0, 100.0 - cpu_idle))
-    ram_used = mem_total_real - mem_avail_real - mem_cached - mem_buffer
-    ram_percent = max(0.0, min(100.0, (ram_used / mem_total_real) * 100.0))
-    storage_percent = max(0.0, min(100.0, (storage_used / storage_size) * 100.0))
-
-    return {
-        'cpu': cpu_percent,
-        'ram': ram_percent,
-        'storage': storage_percent,
-    }
-
-
-def parse_ssh_metrics(output: str) -> dict[str, float]:
-    cpu_match = CPU_RE.search(output)
-    ram_match = RAM_RE.search(output)
-    storage_match = STORAGE_RE.search(output)
-
-    if not (cpu_match and ram_match and storage_match):
-        raise RuntimeError(f'Không parse được output SSH: {output.strip()}')
-
-    cpu_value = parse_float_loose(cpu_match.group(1))
-    ram_value = parse_float_loose(ram_match.group(1))
-    storage_value = parse_float_loose(storage_match.group(1))
-
-    if cpu_value < 0 or cpu_value > 100:
-        raise RuntimeError(f'CPU parse bất thường: {cpu_value} từ output: {output.strip()}')
-    if ram_value < 0 or ram_value > 100:
-        raise RuntimeError(f'RAM parse bất thường: {ram_value} từ output: {output.strip()}')
-    if storage_value < 0 or storage_value > 100:
-        raise RuntimeError(f'Storage parse bất thường: {storage_value} từ output: {output.strip()}')
-
-    return {
-        'cpu': cpu_value,
-        'ram': ram_value,
-        'storage': storage_value,
-    }
+    community = server.get('snmp_community') or 'public'
+    return fetch_metrics_via_proxy_snmp(ip, community, 161)
 
 
 def fetch_server_metrics_ssh(server: dict[str, Any]) -> dict[str, float]:
@@ -722,13 +862,13 @@ df -P / | awk "NR==2 {print \$5}"
             port=22,
             username=username,
             password=password,
-            timeout=8,
-            auth_timeout=8,
-            banner_timeout=8,
+            timeout=SSH_CONNECT_TIMEOUT,
+            auth_timeout=SSH_CONNECT_TIMEOUT,
+            banner_timeout=SSH_CONNECT_TIMEOUT,
             look_for_keys=False,
             allow_agent=False,
         )
-        stdin, stdout, stderr = client.exec_command(command, timeout=20)
+        stdin, stdout, stderr = client.exec_command(command, timeout=SSH_COMMAND_TIMEOUT)
         _ = stdin
 
         stdout_text = stdout.read().decode('utf-8', errors='ignore')
@@ -812,14 +952,14 @@ df -P / | awk "NR==2 {print \$5}"
             port=22,
             username=ssh_username,
             password=ssh_password,
-            timeout=8,
-            auth_timeout=8,
-            banner_timeout=8,
+            timeout=SSH_CONNECT_TIMEOUT,
+            auth_timeout=SSH_CONNECT_TIMEOUT,
+            banner_timeout=SSH_CONNECT_TIMEOUT,
             look_for_keys=False,
             allow_agent=False,
         )
 
-        stdin, stdout, stderr = client.exec_command(command, timeout=20)
+        stdin, stdout, stderr = client.exec_command(command, timeout=SSH_COMMAND_TIMEOUT)
         _ = stdin
 
         stdout_text = stdout.read().decode('utf-8', errors='ignore')
@@ -890,13 +1030,13 @@ def check_one_server(index: int, server: dict[str, Any]) -> tuple[int, dict[str,
             'cpu_percent': f"{snmp_metrics['cpu']:.1f}%",
             'ram_percent': f"{snmp_metrics['ram']:.1f}%",
             'storage_percent': f"{snmp_metrics['storage']:.1f}%",
-            'status': 'Lấy bằng SNMP thành công',
+            'status': f'{snmp_source} thành công',
             'is_success': True,
             'error': '',
         }
     except Exception as exc:
         snmp_error = str(exc)
-        log_server_metric_source(ip, 'SNMP', f'Lỗi: {snmp_error}')
+        log_server_metric_source(ip, 'PROXY_SNMP', f'Lỗi: {snmp_error}')
 
     try:
         ssh_metrics = fetch_server_metrics_ssh(server)
@@ -908,7 +1048,7 @@ def check_one_server(index: int, server: dict[str, Any]) -> tuple[int, dict[str,
             'cpu_percent': f"{ssh_metrics['cpu']:.1f}%",
             'ram_percent': f"{ssh_metrics['ram']:.1f}%",
             'storage_percent': f"{ssh_metrics['storage']:.1f}%",
-            'status': 'SNMP lỗi, fallback SSH thành công',
+            'status': 'Proxy SNMP lỗi, fallback SSH thành công',
             'is_success': True,
             'error': f'SNMP lỗi: {snmp_error}',
         }
@@ -923,9 +1063,9 @@ def check_one_server(index: int, server: dict[str, Any]) -> tuple[int, dict[str,
         'cpu_percent': 'N/A',
         'ram_percent': 'N/A',
         'storage_percent': 'N/A',
-        'status': 'SNMP và SSH đều lỗi',
+        'status': 'Proxy SNMP và SSH đều lỗi',
         'is_success': False,
-        'error': f'SNMP lỗi: {snmp_error}; SSH lỗi: {ssh_error}',
+        'error': f'Proxy SNMP lỗi: {snmp_error}; SSH lỗi: {ssh_error}',
     }
 
 
@@ -936,13 +1076,11 @@ def check_one_website(index: int, website: dict[str, Any]) -> tuple[int, dict[st
 
     for url in candidate_urls:
         try:
-            response = requests.get(
+            response = get_thread_session().get(
                 url,
-                timeout=10,
+                timeout=(WEBSITE_CONNECT_TIMEOUT, WEBSITE_READ_TIMEOUT),
                 allow_redirects=True,
-                verify=False,
                 stream=True,
-                headers=DEFAULT_HEADERS,
             )
             status_code = response.status_code
             reason = (response.reason or '').strip()
@@ -993,83 +1131,26 @@ def format_percent(value: float | int | None) -> str:
         return 'N/A'
 
 
-def fetch_solution_metrics_snmp(solution: dict[str, Any]) -> tuple[dict[str, str], str]:
+def fetch_solution_metrics_snmp(solution: dict[str, Any]) -> tuple[dict[str, str], str, str]:
     if not solution.get('snmp_enabled', True):
-        return {}, 'SNMP disabled'
-    if not snmp_supported():
-        return {}, 'pysnmp not installed'
+        return {}, 'SNMP disabled', 'NONE'
 
     host = parse_solution_host(solution.get('endpoint', ''))
     if not host:
-        return {}, 'invalid endpoint'
+        return {}, 'invalid endpoint', 'NONE'
 
     community = solution.get('snmp_community') or 'public'
     port = int(solution.get('snmp_port', 161) or 161)
-    timeout = int(solution.get('snmp_timeout', 2) or 2)
-    retries = int(solution.get('snmp_retries', 0) or 0)
 
-    metrics = {'cpu_percent': 'N/A', 'ram_percent': 'N/A', 'storage_percent': 'N/A'}
-
-    cpu_idle_values = snmp_get_values(
-        host,
-        community,
-        port,
-        timeout,
-        retries,
-        ['1.3.6.1.4.1.2021.11.11.0'],
-    )
     try:
-        cpu_idle = parse_snmp_numeric(cpu_idle_values['1.3.6.1.4.1.2021.11.11.0'])
-        metrics['cpu_percent'] = format_percent(100.0 - cpu_idle)
-    except Exception:
-        pass
-
-    mem_values = snmp_get_values(
-        host,
-        community,
-        port,
-        timeout,
-        retries,
-        [
-            '1.3.6.1.4.1.2021.4.5.0',
-            '1.3.6.1.4.1.2021.4.6.0',
-            '1.3.6.1.4.1.2021.4.15.0',
-            '1.3.6.1.4.1.2021.4.14.0',
-        ],
-    )
-    try:
-        mem_total_real = parse_snmp_numeric(mem_values['1.3.6.1.4.1.2021.4.5.0'])
-        mem_avail_real = parse_snmp_numeric(mem_values['1.3.6.1.4.1.2021.4.6.0'])
-        mem_cached = parse_snmp_numeric(mem_values['1.3.6.1.4.1.2021.4.15.0'])
-        mem_buffer = parse_snmp_numeric(mem_values['1.3.6.1.4.1.2021.4.14.0'])
-        ram_used = mem_total_real - mem_avail_real - mem_cached - mem_buffer
-        if mem_total_real > 0:
-            metrics['ram_percent'] = format_percent((ram_used / mem_total_real) * 100.0)
-    except Exception:
-        pass
-
-    storage_values = snmp_get_values(
-        host,
-        community,
-        port,
-        timeout,
-        retries,
-        [
-            '1.3.6.1.2.1.25.2.3.1.5.41',
-            '1.3.6.1.2.1.25.2.3.1.6.41',
-        ],
-    )
-    try:
-        storage_size = parse_snmp_numeric(storage_values['1.3.6.1.2.1.25.2.3.1.5.41'])
-        storage_used = parse_snmp_numeric(storage_values['1.3.6.1.2.1.25.2.3.1.6.41'])
-        if storage_size > 0:
-            metrics['storage_percent'] = format_percent((storage_used / storage_size) * 100.0)
-    except Exception:
-        pass
-
-    if all(metrics[k] == 'N/A' for k in metrics):
-        return {}, f'SNMP no metrics from {host}:{port}'
-    return metrics, f'SNMP metrics from {host}:{port}'
+        raw_metrics, source_label, note = fetch_metrics_via_proxy_snmp(host, community, port)
+        return {
+            'cpu_percent': format_percent(raw_metrics['cpu']),
+            'ram_percent': format_percent(raw_metrics['ram']),
+            'storage_percent': format_percent(raw_metrics['storage']),
+        }, note, source_label
+    except Exception as exc:
+        return {}, str(exc), 'NONE'
 
 
 def check_one_solution(index: int, solution: dict[str, Any]) -> tuple[int, dict[str, Any]]:
@@ -1080,9 +1161,9 @@ def check_one_solution(index: int, solution: dict[str, Any]) -> tuple[int, dict[
     password = cleaned['password']
     checkservice = cleaned['checkservice']
 
-    snmp_metrics, snmp_note = fetch_solution_metrics_snmp(cleaned)
+    snmp_metrics, snmp_note, snmp_source = fetch_solution_metrics_snmp(cleaned)
     if snmp_metrics:
-        log_solution_metric_source(name, 'SNMP', snmp_note, snmp_metrics)
+        log_solution_metric_source(name, snmp_source, snmp_note, snmp_metrics)
 
         candidate_urls = build_solution_urls(endpoint)
         web_result = None
@@ -1112,11 +1193,11 @@ def check_one_solution(index: int, solution: dict[str, Any]) -> tuple[int, dict[
             }
 
         web_result.update(snmp_metrics)
-        web_result['metric_source'] = 'SNMP'
+        web_result['metric_source'] = snmp_source
         web_result['note'] = f"{web_result.get('note', '')} | {snmp_note}".strip(' |')
         return index, web_result
 
-    log_solution_metric_source(name, 'SNMP', snmp_note or 'SNMP failed')
+    log_solution_metric_source(name, 'PROXY_SNMP', snmp_note or 'Proxy SNMP failed')
 
     ssh_metrics, ssh_note = fetch_solution_metrics_ssh_priority(cleaned)
     if ssh_metrics:
@@ -1176,7 +1257,7 @@ def check_one_solution(index: int, solution: dict[str, Any]) -> tuple[int, dict[
             'login_status': 'Không truy cập được',
             'running_status': 'Không chạy',
             'status': 'Không truy cập được',
-            'note': f'SNMP failed: {snmp_note}; SSH failed: {ssh_note}; web failed',
+            'note': f'Proxy SNMP failed: {snmp_note}; SSH failed: {ssh_note}; web failed',
             'is_success': False,
             'is_running': False,
             'checkservice': checkservice,
@@ -1236,6 +1317,20 @@ def build_session() -> Session:
     return session
 
 
+
+def get_thread_session() -> Session:
+    session = getattr(_thread_local, 'session', None)
+    if session is None:
+        session = requests.Session()
+        session.verify = False
+        session.headers.update(DEFAULT_HEADERS)
+        adapter = requests.adapters.HTTPAdapter(pool_connections=MAX_WEB_SCAN_WORKERS, pool_maxsize=MAX_WEB_SCAN_WORKERS)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)
+        _thread_local.session = session
+    return session
+
+
 def score_metric_html(html: str) -> int:
     if not html:
         return 0
@@ -1274,7 +1369,7 @@ def fetch_best_solution_html(session: Session, final_url: str, fallback_url: str
 
     for url in candidates:
         try:
-            resp = session.get(url, timeout=12, allow_redirects=True)
+            resp = session.get(url, timeout=SOLUTION_HTTP_TIMEOUT, allow_redirects=True)
         except RequestException:
             continue
 
@@ -1358,7 +1453,7 @@ def fetch_best_solution_response(
 
     for url in candidates:
         try:
-            resp = session.get(url, timeout=12, allow_redirects=True)
+            resp = session.get(url, timeout=SOLUTION_HTTP_TIMEOUT, allow_redirects=True)
         except RequestException:
             continue
 
@@ -1395,6 +1490,12 @@ def looks_like_authenticated_html(text: str, url: str = '') -> bool:
     if '/default/system/status' in url_lower:
         return True
     if 'engine-card' in body or 'status-badge' in body:
+        return True
+    if any(word in lowered for word in ('logout', 'sign out', 'dashboard', 'overview', 'welcome')) and not PASSWORD_INPUT_RE.search(body):
+        return True
+    if extract_services(body):
+        return True
+    if score_metric_values(extract_solution_metrics(body)) > 0:
         return True
     return False
 
@@ -1528,6 +1629,118 @@ def fetch_rendered_solution_metrics(
     return best_metrics, best_html
 
 
+def attempt_browser_solution_login(
+    name: str,
+    endpoint: str,
+    username: str,
+    password: str,
+    url: str,
+    checkservice: bool,
+    debug_steps: list[str] | None = None,
+) -> dict[str, Any] | None:
+    if sync_playwright is None:
+        append_login_debug(debug_steps, 'BROWSER', 'Bỏ qua browser fallback vì Playwright chưa có.')
+        return None
+
+    user_selectors = [
+        'input[name*=user i]', 'input[id*=user i]', 'input[name*=login i]', 'input[id*=login i]',
+        'input[name*=email i]', 'input[id*=email i]', 'input[type=email]', 'input[type=text]'
+    ]
+    pass_selectors = [
+        'input[type=password]', 'input[name*=pass i]', 'input[id*=pass i]', 'input[name*=pwd i]', 'input[id*=pwd i]'
+    ]
+    submit_selectors = [
+        'button[type=submit]', 'input[type=submit]', 'button[name*=login i]', 'button[id*=login i]',
+        'button:has-text("Login")', 'button:has-text("Đăng nhập")', 'text=/login|đăng nhập/i'
+    ]
+
+    try:
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=True)
+            context = browser.new_context(ignore_https_errors=True)
+            page = context.new_page()
+            append_login_debug(debug_steps, 'BROWSER', 'Mở trang bằng Playwright.', url=url)
+            page.goto(url, wait_until='domcontentloaded', timeout=15000)
+            page.wait_for_timeout(1500)
+
+            user_locator = None
+            for selector in user_selectors:
+                locator = page.locator(selector)
+                if locator.count() > 0:
+                    user_locator = locator.first
+                    break
+
+            pass_locator = None
+            for selector in pass_selectors:
+                locator = page.locator(selector)
+                if locator.count() > 0:
+                    pass_locator = locator.first
+                    break
+
+            append_login_debug(debug_steps, 'BROWSER', 'Kết quả dò selector.', found_user=user_locator is not None, found_password=pass_locator is not None)
+            if user_locator is None or pass_locator is None:
+                html = page.content() or ''
+                if looks_like_authenticated_html(html, page.url or url):
+                    metrics = extract_solution_metrics(html)
+                    services = extract_services(html) if checkservice else []
+                    browser.close()
+                    return {
+                        'name': name, 'endpoint': endpoint, 'username': username, 'checked_url': page.url or url,
+                        'http_status': '200 OK', 'login_status': 'Đăng nhập thành công', 'running_status': 'Đang chạy',
+                        'status': 'Đang chạy', 'note': 'Trang đã ở trạng thái authenticated.', 'is_success': True, 'is_running': True,
+                        'checkservice': checkservice, 'service_summary': summarize_services(services) if checkservice else 'Không kiểm tra',
+                        'services': services, 'service_running_count': sum(1 for item in services if item.get('status','').strip().lower() == 'running'),
+                        'service_total_count': len(services), **metrics
+                    }
+                browser.close()
+                return None
+
+            append_login_debug(debug_steps, 'BROWSER', 'Điền username/password và submit form.')
+            user_locator.fill(username, timeout=5000)
+            pass_locator.fill(password, timeout=5000)
+
+            submitted = False
+            for selector in submit_selectors:
+                locator = page.locator(selector)
+                if locator.count() > 0:
+                    locator.first.click(timeout=3000)
+                    submitted = True
+                    break
+            if not submitted:
+                pass_locator.press('Enter')
+
+            try:
+                page.wait_for_load_state('networkidle', timeout=7000)
+            except Exception:
+                page.wait_for_timeout(3000)
+
+            html = page.content() or ''
+            final_url = page.url or url
+            services = extract_services(html) if checkservice else []
+            metrics = extract_solution_metrics(html)
+            success = looks_like_authenticated_html(html, final_url) or (not PASSWORD_INPUT_RE.search(html) and ('login' not in html.lower() and 'đăng nhập' not in html.lower()))
+            if checkservice and services:
+                success = True
+            if score_metric_values(metrics) > 0:
+                success = True
+
+            result = {
+                'name': name, 'endpoint': endpoint, 'username': username, 'checked_url': final_url,
+                'http_status': '200 OK', 'login_status': 'Đăng nhập thành công' if success else 'Không đăng nhập được',
+                'running_status': 'Đang chạy', 'status': 'Đang chạy',
+                'note': 'Đăng nhập qua trình duyệt headless.' if success else 'Headless browser chưa đăng nhập được.',
+                'is_success': success, 'is_running': True, 'checkservice': checkservice,
+                'service_summary': summarize_services(services) if checkservice else 'Không kiểm tra',
+                'services': services, 'service_running_count': sum(1 for item in services if item.get('status','').strip().lower() == 'running'),
+                'service_total_count': len(services), **metrics
+            }
+            browser.close()
+            return result
+    except Exception as exc:
+        append_login_debug(debug_steps, 'BROWSER', 'Browser fallback lỗi.', error=str(exc))
+        return None
+
+
 def attempt_solution_login(
     name: str,
     endpoint: str,
@@ -1538,11 +1751,15 @@ def attempt_solution_login(
     solution: dict[str, Any],
 ) -> dict[str, Any]:
     session = build_session()
+    debug_steps: list[str] = []
+    append_login_debug(debug_steps, 'START', 'Bắt đầu login solution.', name=name, endpoint=endpoint, url=url)
 
     try:
-        response = session.get(url, timeout=12, allow_redirects=True)
+        response = session.get(url, timeout=SOLUTION_HTTP_TIMEOUT, allow_redirects=True)
+        append_login_debug(debug_steps, 'HTTP', 'GET trang login thành công.', status=response.status_code, final_url=response.url or url, content_type=response.headers.get('Content-Type'))
     except RequestException as exc:
-        return {
+        append_login_debug(debug_steps, 'HTTP', 'GET trang login lỗi.', error=describe_request_error(exc))
+        return attach_login_debug({
             'name': name,
             'endpoint': endpoint,
             'username': username,
@@ -1562,7 +1779,7 @@ def attempt_solution_login(
             'storage_percent': 'N/A',
             'service_running_count': 0,
             'service_total_count': 0,
-        }
+        }, debug_steps)
 
     initial_status = response.status_code
     initial_status_text = format_status(response)
@@ -1572,9 +1789,11 @@ def attempt_solution_login(
     content_type = (response.headers.get('Content-Type') or '').lower()
 
     if initial_status in (401, 403) or 'www-authenticate' in response.headers:
+        append_login_debug(debug_steps, 'BASIC_AUTH', 'Trang yêu cầu HTTP auth, thử Basic Auth.', status=initial_status)
         auth_result = try_basic_auth(session, url, username, password)
         if auth_result is not None:
-            return finalize_solution_result(
+            append_login_debug(debug_steps, 'BASIC_AUTH', 'Basic Auth có phản hồi.', status=auth_result.status_code, final_url=auth_result.url or url)
+            return attach_login_debug(finalize_solution_result(
                 name=name,
                 endpoint=endpoint,
                 username=username,
@@ -1586,15 +1805,35 @@ def attempt_solution_login(
                 failure_note='Trang yêu cầu xác thực HTTP nhưng tài khoản chưa đăng nhập được.',
                 checkservice=checkservice,
                 session=session,
-            )
+            ), debug_steps)
 
     if 'html' in content_type:
+        append_login_debug(debug_steps, 'JSON', 'Kiểm tra chiến lược AJAX/JSON login.')
+        json_response = attempt_json_login(session, checked_url, response.text or '', username, password, debug_steps=debug_steps)
+        if json_response is not None:
+            append_login_debug(debug_steps, 'JSON', 'JSON login trả về response hợp lệ.', status=json_response.status_code, final_url=json_response.url or checked_url)
+            return attach_login_debug(finalize_solution_result(
+                name=name,
+                endpoint=endpoint,
+                username=username,
+                fallback_url=checked_url,
+                fallback_status=initial_status_text,
+                fallback_running=is_running,
+                response=json_response,
+                success_note='Đăng nhập AJAX/JSON thành công.',
+                failure_note='Endpoint AJAX/JSON có phản hồi nhưng chưa đăng nhập được.',
+                checkservice=checkservice,
+                session=session,
+            ), debug_steps)
+
         form_info = extract_login_form(response.text, checked_url)
         if form_info is not None:
+            append_login_debug(debug_steps, 'FORM', 'Đã nhận diện form login.', action=form_info.get('action'), method=form_info.get('method'), username_field=form_info.get('username_field'), password_field=form_info.get('password_field'))
             try:
-                submit_response = submit_login_form(session, form_info, checked_url, username, password)
+                submit_response = submit_login_form(session, form_info, checked_url, username, password, debug_steps=debug_steps)
             except RequestException as exc:
-                return {
+                append_login_debug(debug_steps, 'FORM', 'Submit form lỗi.', error=describe_request_error(exc))
+                return attach_login_debug({
                     'name': name,
                     'endpoint': endpoint,
                     'username': username,
@@ -1614,9 +1853,10 @@ def attempt_solution_login(
                     'storage_percent': 'N/A',
                     'service_running_count': 0,
                     'service_total_count': 0,
-                }
+                }, debug_steps)
 
-            return finalize_solution_result(
+            append_login_debug(debug_steps, 'FORM', 'Form submit có phản hồi.', status=submit_response.status_code, final_url=submit_response.url or form_info.get('action'))
+            return attach_login_debug(finalize_solution_result(
                 name=name,
                 endpoint=endpoint,
                 username=username,
@@ -1628,32 +1868,45 @@ def attempt_solution_login(
                 failure_note='Đăng nhập form chưa thành công hoặc hệ thống dùng xác thực đặc biệt.',
                 checkservice=checkservice,
                 session=session,
-            )
+            ), debug_steps)
 
         if initial_status < 400:
-            return {
+            append_login_debug(debug_steps, 'BROWSER', 'Không thấy JSON/form chắc chắn, thử browser fallback.')
+            browser_result = attempt_browser_solution_login(name, endpoint, username, password, checked_url, checkservice, debug_steps=debug_steps)
+            if browser_result is not None:
+                return attach_login_debug(browser_result, debug_steps)
+            metrics = extract_solution_metrics(response.text or '')
+            services = extract_services(response.text or '') if checkservice else []
+            guessed_success = looks_like_authenticated_html(response.text or '', checked_url) or bool(services) or score_metric_values(metrics) > 0
+            return attach_login_debug({
                 'name': name,
                 'endpoint': endpoint,
                 'username': username,
                 'checked_url': checked_url,
                 'http_status': initial_status_text,
-                'login_status': 'Không tìm thấy form đăng nhập',
+                'login_status': 'Đăng nhập thành công' if guessed_success else 'Không tìm thấy form đăng nhập',
                 'running_status': running_status,
                 'status': 'Đang chạy',
-                'note': 'Trang có phản hồi nhưng tool chưa nhận diện được form login.',
-                'is_success': False,
+                'note': 'Suy luận từ nội dung trang phản hồi.' if guessed_success else 'Trang có phản hồi nhưng tool chưa nhận diện được form login.',
+                'is_success': guessed_success,
                 'is_running': is_running,
                 'checkservice': checkservice,
-                'service_summary': 'Không kiểm tra',
-                'services': [],
-                'cpu_percent': 'N/A',
-                'ram_percent': 'N/A',
-                'storage_percent': 'N/A',
-                'service_running_count': 0,
-                'service_total_count': 0,
-            }
+                'service_summary': summarize_services(services) if checkservice else 'Không kiểm tra',
+                'services': services,
+                'cpu_percent': metrics.get('cpu_percent', 'N/A'),
+                'ram_percent': metrics.get('ram_percent', 'N/A'),
+                'storage_percent': metrics.get('storage_percent', 'N/A'),
+                'service_running_count': sum(1 for item in services if item.get('status','').strip().lower() == 'running'),
+                'service_total_count': len(services),
+            }, debug_steps)
 
-    return {
+    append_login_debug(debug_steps, 'BROWSER', 'Thử browser fallback cuối cùng.')
+    browser_result = attempt_browser_solution_login(name, endpoint, username, password, checked_url, checkservice, debug_steps=debug_steps)
+    if browser_result is not None:
+        return attach_login_debug(browser_result, debug_steps)
+
+    append_login_debug(debug_steps, 'END', 'Kết thúc: chưa tìm được phương pháp login phù hợp.', checked_url=checked_url, status=initial_status_text)
+    return attach_login_debug({
         'name': name,
         'endpoint': endpoint,
         'username': username,
@@ -1663,6 +1916,7 @@ def attempt_solution_login(
         'running_status': running_status,
         'status': 'Đang chạy' if is_running else 'Không chạy',
         'note': 'Có phản hồi HTTP nhưng chưa tự động login được.',
+        'login_method': 'unknown',
         'is_success': False,
         'is_running': is_running,
         'checkservice': checkservice,
@@ -1673,14 +1927,14 @@ def attempt_solution_login(
         'storage_percent': 'N/A',
         'service_running_count': 0,
         'service_total_count': 0,
-    }
+    }, debug_steps)
 
 
 def try_basic_auth(session: Session, url: str, username: str, password: str) -> Response | None:
     try:
         return session.get(
             url,
-            timeout=12,
+            timeout=SOLUTION_HTTP_TIMEOUT,
             allow_redirects=True,
             auth=HTTPBasicAuth(username, password),
         )
@@ -1784,6 +2038,7 @@ def finalize_solution_result(
             'running_status': display_running_status,
             'status': 'Đang chạy',
             'note': success_note,
+            'login_method': infer_login_method_from_note(success_note),
             'is_success': True,
             'is_running': True,
             'checkservice': checkservice,
@@ -1802,6 +2057,7 @@ def finalize_solution_result(
         'running_status': running_status,
         'status': 'Đang chạy' if is_running else 'Không chạy',
         'note': failure_note,
+        'login_method': infer_login_method_from_note(failure_note),
         'is_success': False,
         'is_running': is_running,
         'checkservice': checkservice,
@@ -1979,6 +2235,141 @@ def format_status(response: Response) -> str:
     return f'{response.status_code} {reason}'.strip()
 
 
+def detect_json_login_strategy(html: str, base_url: str) -> dict[str, Any] | None:
+    body = html or ''
+    lowered = body.lower()
+    endpoint_candidates: list[str] = []
+
+    for pattern in (JSON_LOGIN_ENDPOINT_RE, JSON_LOGIN_URL_FIELD_RE):
+        for match in pattern.finditer(body):
+            endpoint_candidates.append(urljoin(base_url, match.group(1).strip()))
+
+    if '/default/public/login' in lowered:
+        endpoint_candidates.append(urljoin(base_url, '/default/public/login'))
+
+    if ('json.stringify' in lowered or 'application/json' in lowered or 'xmlhttprequest' in lowered) and ('login' in lowered or 'signin' in lowered or 'auth' in lowered):
+        for path in ('/default/public/login', '/login', '/signin', '/api/login', '/api/auth/login', '/authenticate'):
+            endpoint_candidates.append(urljoin(base_url, path))
+
+    seen = set()
+    endpoints: list[str] = []
+    for item in endpoint_candidates:
+        if item and item not in seen:
+            seen.add(item)
+            endpoints.append(item)
+
+    if not endpoints:
+        return None
+
+    username_field = 'username'
+    if 'name="user_name"' in lowered or "name='user_name'" in lowered:
+        username_field = 'user_name'
+    elif 'name="username"' in lowered or "name='username'" in lowered:
+        username_field = 'username'
+    elif 'name="email"' in lowered or "name='email'" in lowered:
+        username_field = 'email'
+    elif 'name="login"' in lowered or "name='login'" in lowered:
+        username_field = 'login'
+
+    payload_variants: list[dict[str, str]] = []
+    for user_key in (username_field, 'user_name', 'username', 'user', 'login', 'email'):
+        payload_variants.append({user_key: '__USERNAME__', 'password': '__PASSWORD__'})
+
+    match = JSON_LOGIN_KEYS_RE.search(body)
+    if match:
+        snippet = match.group('body') or ''
+        for user_key in ('user_name', 'username', 'user', 'login', 'email'):
+            if user_key in snippet:
+                payload_variants.insert(0, {user_key: '__USERNAME__', 'password': '__PASSWORD__'})
+                break
+
+    redirect_candidates: list[str] = []
+    for match in REDIRECT_PATH_RE.finditer(body):
+        redirect_candidates.append(urljoin(base_url, match.group(1).strip()))
+    for path in GENERIC_POST_LOGIN_PATHS:
+        redirect_candidates.append(urljoin(base_url, path))
+
+    redirect_seen = set()
+    redirects: list[str] = []
+    for item in redirect_candidates:
+        if item and item not in redirect_seen:
+            redirect_seen.add(item)
+            redirects.append(item)
+
+    return {'endpoints': endpoints, 'payload_variants': payload_variants, 'redirect_candidates': redirects}
+
+
+def json_login_response_indicates_success(data: Any) -> tuple[bool, str | None]:
+    if isinstance(data, dict):
+        for key in JSON_SUCCESS_KEYS:
+            if data.get(key) is True:
+                return True, data.get('redirect') or data.get('url') or data.get('next')
+        status_value = str(data.get('status', '')).strip().lower()
+        if status_value in ('ok', 'success', 'authenticated', 'logged_in'):
+            return True, data.get('redirect') or data.get('url') or data.get('next')
+        if any(key in data for key in ('token', 'access_token', 'sessionid', 'session_id')):
+            return True, data.get('redirect') or data.get('url') or data.get('next')
+    return False, None
+
+
+def attempt_json_login(session: Session, base_url: str, html: str, username: str, password: str, debug_steps: list[str] | None = None) -> Response | None:
+    strategy = detect_json_login_strategy(html, base_url)
+    if strategy is None:
+        append_login_debug(debug_steps, 'JSON', 'Không phát hiện chiến lược JSON login trong HTML.')
+        return None
+    append_login_debug(debug_steps, 'JSON', 'Phát hiện chiến lược JSON login.', endpoints=strategy.get('endpoints'), redirects=strategy.get('redirect_candidates'))
+
+    headers = {
+        'Referer': base_url,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json, text/plain, */*',
+        'X-Requested-With': 'XMLHttpRequest',
+    }
+
+    for endpoint in strategy['endpoints']:
+        for template in strategy['payload_variants']:
+            payload = {k: (username if v == '__USERNAME__' else password if v == '__PASSWORD__' else v) for k, v in template.items()}
+            try:
+                append_login_debug(debug_steps, 'JSON', 'Thử JSON login.', endpoint=endpoint, payload_keys=list(payload.keys()))
+                resp = session.post(endpoint, json=payload, headers=headers, timeout=SOLUTION_HTTP_TIMEOUT, allow_redirects=True)
+            except RequestException as exc:
+                append_login_debug(debug_steps, 'JSON', 'POST JSON lỗi.', endpoint=endpoint, error=describe_request_error(exc))
+                continue
+
+            append_login_debug(debug_steps, 'JSON', 'POST JSON có phản hồi.', endpoint=endpoint, status=resp.status_code, content_type=resp.headers.get('Content-Type'), final_url=resp.url or endpoint, body_preview=(resp.text or '')[:180])
+            if looks_like_logged_in(resp) or looks_like_authenticated_html(resp.text or '', resp.url or endpoint):
+                append_login_debug(debug_steps, 'JSON', 'Response sau JSON login đã giống trạng thái authenticated.')
+                return resp
+
+            content_type = (resp.headers.get('Content-Type') or '').lower()
+            if 'json' not in content_type:
+                continue
+            try:
+                data = resp.json()
+            except ValueError:
+                append_login_debug(debug_steps, 'JSON', 'Response không parse được JSON.')
+                continue
+            success, redirect = json_login_response_indicates_success(data)
+            append_login_debug(debug_steps, 'JSON', 'Kết quả parse JSON.', success=success, redirect=redirect, json_preview=data)
+            if not success:
+                continue
+            targets = []
+            if redirect:
+                targets.append(urljoin(endpoint, str(redirect)))
+            targets.extend(strategy['redirect_candidates'])
+            for target in targets:
+                try:
+                    append_login_debug(debug_steps, 'JSON', 'Probe trang sau login.', target=target)
+                    probe = session.get(target, timeout=SOLUTION_HTTP_TIMEOUT, allow_redirects=True)
+                except RequestException as exc:
+                    append_login_debug(debug_steps, 'JSON', 'Probe sau login lỗi.', target=target, error=describe_request_error(exc))
+                    continue
+                if looks_like_logged_in(probe) or looks_like_authenticated_html(probe.text or '', probe.url or target):
+                    return probe
+            return resp
+    return None
+
+
 def extract_login_form(html: str, base_url: str) -> dict[str, Any] | None:
     soup = BeautifulSoup(html, 'html.parser')
     candidate_forms: list[tuple[int, Any]] = []
@@ -2073,6 +2464,7 @@ def submit_login_form(
     referer_url: str,
     username: str,
     password: str,
+    debug_steps: list[str] | None = None,
 ) -> Response:
     payload = dict(form_info['fields'])
     payload[form_info['username_field']] = username
@@ -2080,21 +2472,36 @@ def submit_login_form(
     headers = {'Referer': referer_url}
 
     if form_info['method'] == 'get':
+        append_login_debug(debug_steps, 'FORM', 'Submit form GET.', action=form_info['action'], payload_keys=list(payload.keys()))
         return session.get(
             form_info['action'],
             params=payload,
             headers=headers,
-            timeout=12,
+            timeout=SOLUTION_HTTP_TIMEOUT,
             allow_redirects=True,
         )
 
+    append_login_debug(debug_steps, 'FORM', 'Submit form POST.', action=form_info['action'], payload_keys=list(payload.keys()))
     return session.post(
         form_info['action'],
         data=payload,
         headers=headers,
-        timeout=12,
+        timeout=SOLUTION_HTTP_TIMEOUT,
         allow_redirects=True,
     )
+
+
+def infer_login_method_from_note(note: str) -> str:
+    lowered = (note or '').lower()
+    if 'basic auth' in lowered:
+        return 'basic_auth'
+    if 'ajax/json' in lowered or 'json' in lowered:
+        return 'json'
+    if 'form' in lowered:
+        return 'form'
+    if 'trình duyệt' in lowered or 'browser' in lowered or 'headless' in lowered:
+        return 'browser'
+    return 'unknown'
 
 
 def looks_like_logged_in(response: Response) -> bool:
