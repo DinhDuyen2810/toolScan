@@ -1,17 +1,22 @@
 [
   {
+    "group": "A",
     "domain": "v2secure.vn"
   },
   {
+    "group": "A",
     "domain": "jira-int.v2secure.vn"
   },
   {
+    "group": "A",
     "domain": "confluence-int.v2secure.vn"
   },
   {
+    "group": "A",
     "domain": "authentik-int.v2secure.vn"
   },
   {
+    "group": "A",
     "domain": "mail.v2secure.vn"
   }
 ]

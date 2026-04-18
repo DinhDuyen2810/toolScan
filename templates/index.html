@@ -3,799 +3,371 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tool kiểm tra SSH, Website và Giải pháp</title>
+  <title>ToolScan theo nhóm</title>
   <style>
-    * { box-sizing: border-box; }
-    body { margin:0; font-family: Arial, Helvetica, sans-serif; background:#f3f6fb; color:#1f2937; }
-    .container { max-width: 1420px; margin: 24px auto; padding: 0 16px 28px; }
-    .card { background:#fff; border-radius:18px; box-shadow:0 10px 30px rgba(15,23,42,.08); padding:22px; margin-bottom:20px; }
-    .section-title { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
-    .section-title h2, .section-header h3, h1 { margin:0; }
-    .section-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; }
-    .pill { display:inline-flex; align-items:center; padding:6px 10px; border-radius:999px; background:#dbeafe; color:#1d4ed8; font-weight:700; font-size:12px; }
-    .page-subtitle, .subtitle, .muted, .result-note { color:#6b7280; line-height:1.5; }
-    .toolbar { display:flex; gap:10px; flex-wrap:wrap; margin:14px 0 10px; }
-    button { border:none; border-radius:12px; padding:10px 16px; font-size:14px; font-weight:700; cursor:pointer; }
-    button:disabled { opacity:.65; cursor:not-allowed; }
-    .btn-primary { background:#2563eb; color:#fff; }
-    .btn-secondary { background:#e5e7eb; color:#111827; }
-    .btn-success { background:#16a34a; color:#fff; }
-    .btn-danger { background:#dc2626; color:#fff; }
-    .message { display:none; margin-top:12px; padding:12px 14px; border-radius:12px; font-size:14px; }
-    .message.show { display:block; }
-    .message.info { background:#dbeafe; color:#1d4ed8; }
-    .message.success { background:#dcfce7; color:#166534; }
-    .message.error { background:#fee2e2; color:#b91c1c; }
-    .summary { display:none; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-top:16px; }
-    .stat { background:#f9fafb; border:1px solid #e5e7eb; border-radius:14px; padding:14px; }
-    .stat .label { color:#6b7280; font-size:13px; margin-bottom:8px; }
-    .stat .value { font-size:28px; font-weight:700; }
-    .hidden { display:none; }
-    table { width:100%; border-collapse:collapse; }
-    th, td { padding:12px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align:middle; }
-    th { background:#f9fafb; font-size:14px; }
-    input[type="text"], input[type="number"] { width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:10px; font-size:14px; outline:none; }
-    input[type="text"]:focus, input[type="number"]:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
-    input[type="checkbox"] { width:18px; height:18px; }
-    tr.invalid input[type="text"], tr.invalid input[type="number"] { border-color:#ef4444; background:#fef2f2; }
-    .badge { display:inline-block; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700; white-space:nowrap; }
-    .badge-success { background:#dcfce7; color:#166534; }
-    .badge-failed { background:#fee2e2; color:#991b1b; }
-    .badge-info { background:#e0f2fe; color:#075985; }
-    .badge-muted { background:#f3f4f6; color:#4b5563; }
-    .metric-warn { background:#fef3c7; color:#92400e; font-weight:700; border-radius:8px; padding:6px 8px; display:inline-block; min-width:72px; text-align:center; }
-    .metric-high { background:#fed7aa; color:#9a3412; font-weight:700; border-radius:8px; padding:6px 8px; display:inline-block; min-width:72px; text-align:center; }
-    .metric-critical { background:#fecaca; color:#991b1b; font-weight:700; border-radius:8px; padding:6px 8px; display:inline-block; min-width:72px; text-align:center; }
-    .metric-normal { display:inline-block; min-width:72px; }
-    .empty { color:#6b7280; padding:18px 0 8px; }
-    .mono { font-family: Consolas, Monaco, monospace; word-break: break-all; }
-    .spacer { height:6px; }
-    .solution-name { display:flex; align-items:center; gap:8px; }
-    .toggle-arrow { border:1px solid #cbd5e1; background:#fff; color:#334155; width:28px; height:28px; border-radius:8px; padding:0; line-height:1; }
-    .toggle-arrow.open { background:#e0f2fe; }
-    .service-row td { background:#fafafa; }
-    .service-wrap { padding:6px 0 4px; }
-    .service-item { display:flex; justify-content:space-between; gap:12px; padding:8px 10px; border:1px solid #e5e7eb; border-radius:10px; margin-bottom:8px; background:#fff; }
-    .cell-actions { width:120px; }
-    .table-caption { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:10px; }
-    @media (max-width: 768px) {
-      .container { margin:14px auto; }
-      .section-header, .table-caption { flex-direction:column; align-items:flex-start; }
-      th, td { padding:10px 8px; font-size:13px; }
-      .service-item { flex-direction:column; }
-      .cell-actions { width:auto; }
-    }
-  </style>
+    :root{--bg:#eff4fb;--card:#ffffff;--line:#dbe5f0;--muted:#667085;--text:#182230;--blue:#2563eb;--blue-2:#dbeafe;--green:#16a34a;--green-2:#dcfce7;--red:#dc2626;--red-2:#fee2e2;--amber:#ca8a04;--amber-2:#fef3c7;--orange:#ea580c;--orange-2:#ffedd5;--shadow:0 14px 40px rgba(15,23,42,.08)}
+    *{box-sizing:border-box} html,body{margin:0;padding:0} body{font-family:Inter,Arial,Helvetica,sans-serif;background:linear-gradient(180deg,#f7faff 0,#eef4fb 100%);color:var(--text)}
+    .shell{width:min(99vw,2200px);margin:18px auto 34px;padding:0 8px}
+    .hero,.panel{background:var(--card);border:1px solid #edf2f7;border-radius:22px;box-shadow:var(--shadow)}
+    .hero{padding:24px 26px;margin-bottom:18px}.panel{padding:22px 22px 18px;margin-bottom:18px}
+    h1,h2,h3,h4,p{margin:0}.hero h1{font-size:34px;line-height:1.15}.hero p,.muted{color:var(--muted);line-height:1.55}
+    .section-head,.between,.toolbar,.chips,.breadcrumbs,.tab-row,.stat-grid,.group-grid,.header-grid{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.between{justify-content:space-between}
+    .header-grid{justify-content:space-between;align-items:flex-start}
+    .crumb-link{cursor:pointer}
+    .service-cell{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+    .service-header{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
+    .service-list-wrap{width:100%}
+    .pill,.badge,.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;font-weight:800}
+    .pill{padding:8px 12px;background:var(--blue-2);color:#1d4ed8;font-size:12px;letter-spacing:.03em}
+    .chip{padding:9px 12px;background:#f5f8fc;color:#344054;border:1px solid var(--line);font-size:13px}
+    .badge{padding:7px 11px;font-size:12px;white-space:normal;word-break:break-word;flex-wrap:wrap;line-height:1.25}.badge-success{background:var(--green-2);color:#166534}.badge-fail{background:var(--red-2);color:#991b1b}.badge-muted{background:#eef2f7;color:#475467}.badge-info{background:var(--blue-2);color:#1d4ed8}.metric-source-badge{white-space:nowrap;word-break:normal;flex-wrap:nowrap}
+    button{border:none;border-radius:14px;padding:11px 16px;font-size:14px;font-weight:800;cursor:pointer;transition:.18s transform,.18s opacity,.18s background;white-space:normal;line-height:1.15}.btn-scan-result{min-width:84px;padding:11px 18px;display:inline-flex;justify-content:center;align-items:center;text-align:center}.toolbar button:hover,.tab:hover{transform:translateY(-1px)} button:disabled{opacity:.6;cursor:not-allowed;transform:none}
+    .btn-primary{background:var(--blue);color:#fff}.btn-secondary{background:#eef2f7;color:#111827}.btn-success{background:var(--green);color:#fff}.btn-danger{background:var(--red);color:#fff}.btn-warning{background:#f59e0b;color:#111827}
+    .message{display:none;border-radius:14px;padding:13px 15px;margin-top:14px;font-weight:700}.message.show{display:block}.message.info{background:var(--blue-2);color:#1d4ed8}.message.success{background:var(--green-2);color:#166534}.message.error{background:var(--red-2);color:#991b1b}
+    .summary{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:14px;margin-top:16px}.stat{background:linear-gradient(180deg,#fbfdff 0,#f6f9fc 100%);border:1px solid var(--line);border-radius:18px;padding:16px 18px}.stat .label{font-size:12px;color:var(--muted);font-weight:800;text-transform:uppercase}.stat .value{margin-top:10px;font-size:30px;font-weight:900}
+    .group-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-top:18px}
+    .group-card{border:1px solid var(--line);border-radius:20px;padding:18px;background:linear-gradient(180deg,#fcfdff 0,#f7faff 100%)}
+    .group-card:hover{box-shadow:0 10px 24px rgba(37,99,235,.08);border-color:#c9dbff}.group-title{font-weight:900;font-size:20px}.group-meta{color:var(--muted);font-size:14px;margin-top:6px}.group-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 16px}.mini{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px}.mini .k{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase}.mini .v{margin-top:6px;font-size:22px;font-weight:900}
+    .breadcrumbs{margin-top:16px}.breadcrumbs .sep{color:#98a2b3}
+    .tab-row{margin:18px 0 12px}.tab{padding:10px 14px;border-radius:999px;background:#eef2f7;color:#344054;font-weight:800;cursor:pointer;border:1px solid transparent}.tab.active{background:var(--blue-2);color:#1d4ed8;border-color:#bfdbfe}
+    .view-card{background:#fbfdff;border:1px solid var(--line);border-radius:18px;padding:16px}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:16px;background:#fff;max-width:100%}.table-wrap.tall{max-height:72vh}
+    table{width:100%;min-width:980px;border-collapse:separate;border-spacing:0;table-layout:fixed} th,td{padding:13px 12px;border-bottom:1px solid #edf2f7;text-align:left;vertical-align:top;white-space:nowrap;word-break:normal;overflow-wrap:normal} th{position:sticky;top:0;background:#f8fbff;z-index:2;font-size:13px} tr:hover td{background:#fafcff}
+    .status-cell,.status-cell *{white-space:normal}.status-note{display:block;margin-top:6px;color:var(--muted);font-size:12px;line-height:1.35}.result-cell,.result-cell *{white-space:nowrap}.url-break,.url-break *{white-space:normal!important;word-break:break-word;overflow-wrap:anywhere}.service-cell,.service-cell *{white-space:nowrap}.service-list-wrap,.service-list-wrap *{white-space:normal}.solution-results th:nth-child(1),.solution-results td:nth-child(1){width:280px}.solution-results th:nth-child(2),.solution-results td:nth-child(2){width:250px}.solution-results th:nth-child(3),.solution-results td:nth-child(3){width:200px}.solution-results th:nth-child(4),.solution-results td:nth-child(4){width:140px}.solution-results th:nth-child(5),.solution-results td:nth-child(5),.solution-results th:nth-child(6),.solution-results td:nth-child(6),.solution-results th:nth-child(7),.solution-results td:nth-child(7){width:95px}.solution-results th:nth-child(8),.solution-results td:nth-child(8){width:500px}.solution-results th:nth-child(9),.solution-results td:nth-child(9){width:120px}.ssh-results th:nth-child(1),.ssh-results td:nth-child(1){width:220px}.ssh-results th:nth-child(2),.ssh-results td:nth-child(2){width:170px}.ssh-results th:nth-child(3),.ssh-results td:nth-child(3){width:160px}.ssh-results th:nth-child(4),.ssh-results td:nth-child(4){width:132px}.ssh-results th:nth-child(5),.ssh-results td:nth-child(5),.ssh-results th:nth-child(6),.ssh-results td:nth-child(6),.ssh-results th:nth-child(7),.ssh-results td:nth-child(7){width:90px}.ssh-results th:nth-child(8),.ssh-results td:nth-child(8){width:220px}.ssh-results th:nth-child(9),.ssh-results td:nth-child(9){width:110px}.web-results th:nth-child(1),.web-results td:nth-child(1){width:260px}.web-results th:nth-child(2),.web-results td:nth-child(2){width:170px}.web-results th:nth-child(3),.web-results td:nth-child(3){width:380px}.web-results th:nth-child(4),.web-results td:nth-child(4){width:110px}.web-results th:nth-child(5),.web-results td:nth-child(5){width:180px}.web-results th:nth-child(6),.web-results td:nth-child(6){width:110px}
+    td.cell-actions,th.cell-actions{position:sticky;right:0;background:inherit;z-index:1}.table-wrap th.cell-actions{z-index:3;background:#f8fbff}
+    input[type="text"],input[type="number"],select{width:100%;padding:10px 11px;border:1px solid #d0d5dd;border-radius:12px;background:#fff;font-size:14px} .checkbox-cell{text-align:center}
+    .empty{padding:30px 14px;text-align:center;color:var(--muted)} .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;word-break:normal;overflow-wrap:normal}
+    .metric-normal{font-weight:800}.metric-warn{font-weight:900;color:var(--amber)}.metric-high{font-weight:900;color:var(--orange)}.metric-critical{font-weight:900;color:var(--red)}.invalid td{background:#fff7ed}.hidden{display:none}.scan-dim{opacity:.45;pointer-events:none}.inline-icon-btn{border:1px solid var(--line);background:#f8fbff;color:#1d4ed8;border-radius:999px;padding:0;width:30px;height:30px;font-size:15px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex:0 0 30px;white-space:nowrap}.inline-icon-btn:hover{background:var(--blue-2)}.name-inline{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}.expand-row td{background:#fbfdff;white-space:normal}.expand-panel{border:1px solid var(--line);border-radius:14px;background:#fff;padding:12px}.expand-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}.expand-card{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fcfdff;min-width:0}.expand-card.storage-card{grid-column:1/-1;width:100%}.expand-card.storage-card .expand-list li,.expand-card.storage-card .mono{white-space:normal;word-break:break-word}.expand-title{font-size:13px;font-weight:900;margin-bottom:8px}.expand-list{margin:0;padding-left:18px}.expand-list li{margin:4px 0}.detail-empty{color:var(--muted);font-size:13px}.mini-table{width:780px;min-width:780px;max-width:780px;border-collapse:collapse;table-layout:fixed}.mini-table th:nth-child(1),.mini-table td:nth-child(1){width:450px}.mini-table th:nth-child(2),.mini-table td:nth-child(2){width:330px}.mini-table th,.mini-table td{padding:8px 10px;border-bottom:1px solid var(--line);position:static;background:transparent;white-space:nowrap;word-break:normal;overflow-wrap:normal}.mini-table th{font-size:12px;background:#f8fbff}.mini-table tr:hover td{background:transparent}
+    .top-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.result-note{color:var(--muted);font-size:13px}
+    .section-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .database-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .compact-note{font-size:13px;color:var(--muted)}
+    .service-list{margin:8px 0 0 0;padding-left:18px}.service-list li{margin:4px 0}.service-running{color:#166534;font-weight:800}.service-stopped{color:#991b1b;font-weight:800}.service-disabled{color:#9a3412;font-weight:800}.service-warning{color:#b45309;font-weight:800}.service-unknown{color:#475467;font-weight:800}.service-cell{display:flex;flex-direction:column;align-items:flex-start;gap:8px}.service-header{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}.service-list-wrap{width:100%}.service-toggle{display:block;width:100%}.service-toggle-btn{display:flex;align-items:center;gap:8px;border:0;background:transparent;padding:0;cursor:pointer;font:inherit}.service-toggle-btn .toggle-icon{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;border:1px solid var(--line);background:#f8fbff;font-weight:900;flex:0 0 28px}.service-toggle-btn.open .toggle-icon{background:var(--blue-2);color:#1d4ed8;border-color:#bfdbfe}.service-list-wrap{width:100%}.scanning-note{display:inline-flex;align-items:center;gap:8px;font-weight:700;color:#1d4ed8}.spin{display:inline-block;width:14px;height:14px;border:2px solid #bfdbfe;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+    .secret-locked{padding:18px;border:1px dashed var(--line);border-radius:16px;background:#f8fbff}.secret-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}.secret-card{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fbfdff}.inline-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}.setting-card{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}.setting-card label{display:block;font-weight:800;margin-bottom:8px}.setting-help{margin-top:6px;color:var(--muted);font-size:13px;line-height:1.45}
+    @media (max-width:1200px){.summary{grid-template-columns:repeat(2,minmax(140px,1fr))}.shell{width:min(98vw,1800px)}.panel{padding:18px}.hero h1{font-size:28px}}
+    @media (max-width:720px){.summary{grid-template-columns:1fr}.group-stats{grid-template-columns:1fr}.hero,.panel{border-radius:18px;padding:16px}.top-actions{width:100%}button{width:100%}}
+  
+    .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
+    .modal-backdrop.show{display:flex}
+    .modal-card{width:min(520px,100%);background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 24px 70px rgba(2,6,23,.22);padding:18px}
+    .modal-card h3{margin:0 0 8px 0}.modal-card p{margin:0 0 14px 0;color:var(--muted)}
+    .modal-card input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font:inherit}
+    .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+
+</style>
 </head>
 <body>
-<div class="container">
-  <div class="card">
-    <h1>Tool kiểm tra SSH, Website và Giải pháp</h1>
-    <p class="page-subtitle"><strong>Mục I</strong> quét SSH/SNMP. <strong>Mục II</strong> quét website. <strong>Mục III</strong> quét giải pháp theo thứ tự SNMP → SSH → Giao diện. Các trường nhạy cảm chỉ nhập <strong>alias</strong> từ <span class="mono">.env</span> như <span class="mono">pass_mac_dinh</span>, <span class="mono">pass_giai_phap</span>, <span class="mono">pass_ssh_root</span>, <span class="mono">snmpstring_mac_dinh</span>.</p>
-  </div>
-
-  <div class="card">
-    <div class="section-title"><span class="pill">MỤC I</span><h2>Quét server bằng SNMP trước, SSH fallback sau</h2></div>
-    <p class="subtitle">Bấm <strong>Bắt đầu quét SSH</strong> để tool thử lấy %CPU, %RAM, %Storage bằng <strong>SNMP</strong> trước. Nếu SNMP lỗi hoặc thiếu dữ liệu thì tool sẽ tự chuyển qua <strong>SSH</strong>. Cột kết quả sẽ hiển thị nguồn lấy dữ liệu.</p>
-    <div class="toolbar"><button class="btn-primary" id="sshScanBtn" type="button">Bắt đầu quét SSH</button><button class="btn-secondary" id="sshToggleDbBtn" type="button">Xem database SSH</button></div>
-    <div class="muted">Database SSH đang ẩn. Bạn có thể thêm hoặc xóa dòng tùy ý.</div>
-    <div class="message" id="sshMessageBox"></div>
-    <div class="summary" id="sshSummaryBox">
-      <div class="stat"><div class="label">Tổng số máy</div><div class="value" id="sshTotalCount">0</div></div>
-      <div class="stat"><div class="label">Lấy thành công</div><div class="value" id="sshSuccessCount">0</div></div>
-      <div class="stat"><div class="label">Không lấy được</div><div class="value" id="sshFailedCount">0</div></div>
-    </div>
-  </div>
-  <div class="card hidden" id="sshDatabaseCard">
-    <div class="section-header"><h3>Database SSH</h3><button class="btn-secondary" id="sshHideDbBtn" type="button">Ẩn database SSH</button></div>
-    <div class="table-caption"><div class="muted">Có thể thêm hoặc xóa dòng trực tiếp rồi bấm lưu. Trường nhạy cảm chỉ nhập alias trong <span class="mono">.env</span>.</div><button class="btn-secondary" id="sshAddRowBtn" type="button">Thêm dòng</button></div>
-    <div style="overflow-x:auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>IP</th>
-            <th>Username</th>
-            <th>Password alias (.env)</th>
-            <th>SNMP alias</th>
-            <th class="cell-actions">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody id="sshDatabaseBody"><tr><td colspan="5" class="empty">Đang tải database SSH...</td></tr></tbody>
-      </table>
-    </div>
-    <div class="toolbar" style="margin-bottom:0;"><button class="btn-success" id="sshSaveDbBtn" type="button">Lưu database SSH</button></div>
-  </div>
-  <div class="card">
-    <div class="section-header"><h3>Kết quả quét SSH</h3></div>
-    <div style="overflow-x:auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>IP</th>
-            <th>Nguồn</th>
-            <th>Username</th>
-            <th>% CPU đã dùng</th>
-            <th>% RAM đã dùng</th>
-            <th>% Storage đã dùng</th>
-            <th>Trạng thái</th>
-            <th class="cell-actions">Quét lẻ</th>
-          </tr>
-        </thead>
-        <tbody id="sshResultBody"><tr><td colspan="8" class="empty">Chưa có dữ liệu.</td></tr></tbody>
-      </table>
+<div class="shell">
+  <div class="hero">
+    <div class="section-head"><span class="pill">TOOLSCAN</span><h1>Quét theo nhóm, dễ nhìn và dễ thao tác</h1></div>
+    <p style="margin-top:10px">Mỗi mục có nhóm riêng. Bạn có thể quét tất cả nhóm, quét một nhóm, hoặc đi vào trong nhóm để quét từng thành phần. Giao diện này ưu tiên nhìn rõ database, thao tác nhanh và không bị chật.</p>
+    <div class="section-meta">
+      <span class="chip">Mục I / II / III độc lập nhau</span>
+      <span class="chip">Dữ liệu cũ mặc định ở nhóm A</span>
+      <span class="chip">Kết quả và database hiển thị tách rõ</span>
     </div>
   </div>
 
-  <div class="spacer"></div>
-
-  <div class="card">
-    <div class="section-title"><span class="pill">MỤC II</span><h2>Quét website / domain</h2></div>
-    <p class="subtitle">Bấm <strong>Bắt đầu quét website</strong> để kiểm tra các domain trong database. Domain nào truy cập được sẽ trả về <strong>200 OK</strong>, domain nào lỗi sẽ trả về status tương ứng hoặc <strong>N/A</strong>.</p>
-    <div class="toolbar"><button class="btn-primary" id="webScanBtn" type="button">Bắt đầu quét website</button><button class="btn-secondary" id="webToggleDbBtn" type="button">Xem database website</button></div>
-    <div class="muted">Database website đang ẩn. Bạn có thể thêm hoặc xóa dòng tùy ý.</div>
-    <div class="message" id="webMessageBox"></div>
-    <div class="summary" id="webSummaryBox">
-      <div class="stat"><div class="label">Tổng số domain</div><div class="value" id="webTotalCount">0</div></div>
-      <div class="stat"><div class="label">200 OK</div><div class="value" id="webSuccessCount">0</div></div>
-      <div class="stat"><div class="label">Không 200 / lỗi</div><div class="value" id="webFailedCount">0</div></div>
-    </div>
-  </div>
-  <div class="card hidden" id="webDatabaseCard">
-    <div class="section-header"><h3>Database website</h3><button class="btn-secondary" id="webHideDbBtn" type="button">Ẩn database website</button></div>
-    <div class="table-caption"><div class="muted">Mỗi dòng là một domain hoặc URL.</div><button class="btn-secondary" id="webAddRowBtn" type="button">Thêm dòng</button></div>
-    <div style="overflow-x:auto;">
-      <table>
-        <thead><tr><th>Domain</th><th class="cell-actions">Thao tác</th></tr></thead>
-        <tbody id="webDatabaseBody"><tr><td colspan="2" class="empty">Đang tải database website...</td></tr></tbody>
-      </table>
-    </div>
-    <div class="toolbar" style="margin-bottom:0;"><button class="btn-success" id="webSaveDbBtn" type="button">Lưu database website</button></div>
-  </div>
-  <div class="card">
-    <div class="section-header"><h3>Kết quả quét website</h3></div>
-    <div style="overflow-x:auto;"><table><thead><tr><th>Domain</th><th>IP public</th><th>URL kiểm tra</th><th>HTTP status</th><th>Kết quả</th><th class="cell-actions">Quét lẻ</th></tr></thead><tbody id="webResultBody"><tr><td colspan="6" class="empty">Chưa có dữ liệu.</td></tr></tbody></table></div>
-  </div>
-
-  <div class="spacer"></div>
-
-  <div class="card">
-    <div class="section-title"><span class="pill">MỤC III</span><h2>Quét giải pháp và service</h2></div>
-    <p class="subtitle">Tool sẽ thử lấy CPU, RAM, Storage theo thứ tự <strong>SNMP → SSH → Giao diện</strong>. Nếu bật <strong>CheckService</strong>, sau khi truy cập được giao diện tool sẽ tìm tất cả service trong <span class="mono">div.engine-card</span>, lấy tên trong <span class="mono">div.engine-title</span> và trạng thái trong <span class="mono">div.status-badge</span>.</p>
-    <div class="toolbar"><button class="btn-primary" id="solutionScanBtn" type="button">Bắt đầu quét giải pháp</button><button class="btn-secondary" id="solutionToggleDbBtn" type="button">Xem database giải pháp</button></div>
-    <div class="muted">Database giải pháp đang ẩn. Bạn có thể thêm hoặc xóa dòng tùy ý.</div>
-    <div class="message" id="solutionMessageBox"></div>
-    <div class="summary" id="solutionSummaryBox">
-      <div class="stat"><div class="label">Tổng số giải pháp</div><div class="value" id="solutionTotalCount">0</div></div>
-      <div class="stat"><div class="label">Đang chạy</div><div class="value" id="solutionRunningCount">0</div></div>
-      <div class="stat"><div class="label">Đăng nhập thành công</div><div class="value" id="solutionLoginSuccessCount">0</div></div>
-      <div class="stat"><div class="label">Cần kiểm tra thêm</div><div class="value" id="solutionIssueCount">0</div></div>
-      <div class="stat"><div class="label">Service running</div><div class="value" id="solutionServiceRunningCount">0/0</div></div>
-    </div>
-  </div>
-  <div class="card hidden" id="solutionDatabaseCard">
-    <div class="section-header"><h3>Database giải pháp</h3><button class="btn-secondary" id="solutionHideDbBtn" type="button">Ẩn database giải pháp</button></div>
-    <div class="table-caption"><div class="muted">Tên và endpoint là bắt buộc. Các trường pass/SNMP chỉ nhập alias trong <span class="mono">.env</span>.</div><button class="btn-secondary" id="solutionAddRowBtn" type="button">Thêm dòng</button></div>
-    <div style="overflow-x:auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>Tên giải pháp</th>
-            <th>Endpoint / URL</th>
-            <th>User giao diện</th>
-            <th>Pass giao diện alias</th>
-            <th>User SSH</th>
-            <th>Pass SSH alias</th>
-            <th>SNMP bật</th>
-            <th>SNMP alias</th>
-            <th>SNMP Port</th>
-            <th>CheckService</th>
-            <th class="cell-actions">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody id="solutionDatabaseBody"><tr><td colspan="11" class="empty">Đang tải database giải pháp...</td></tr></tbody>
-      </table>
-    </div>
-    <div class="toolbar" style="margin-bottom:0;"><button class="btn-success" id="solutionSaveDbBtn" type="button">Lưu database giải pháp</button></div>
-  </div>
-  <div class="card">
-    <div class="section-header"><h3>Kết quả quét giải pháp</h3></div>
-    <div style="overflow-x:auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>Giải pháp</th>
-            <th>Endpoint / URL</th>
-            <th>Đăng nhập</th>
-            <th>Trạng thái chạy</th>
-            <th>Nguồn metrics</th>
-            <th>CPU</th>
-            <th>RAM</th>
-            <th>Storage</th>
-            <th class="cell-actions">Quét lẻ</th>
-          </tr>
-        </thead>
-        <tbody id="solutionResultBody"><tr><td colspan="9" class="empty">Chưa có dữ liệu.</td></tr></tbody>
-      </table>
-    </div>
-  </div>
+  <div class="panel" id="secretSection"></div>
+  <div class="panel" id="sshSection"></div>
+  <div class="panel" id="webSection"></div>
+  <div class="panel" id="solutionSection"></div>
 </div>
+<div id="appModal" class="modal-backdrop"></div>
 <script>
 const esc = (v) => String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const clone = (v) => JSON.parse(JSON.stringify(v));
 async function apiGet(url){ const r = await fetch(url); const d = await r.json(); if(!r.ok) throw new Error(d.error || 'Có lỗi xảy ra.'); return d; }
 async function apiPost(url, body={}){ const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const d = await r.json(); if(!r.ok) throw new Error(d.error || 'Có lỗi xảy ra.'); return d; }
-function showMessage(box, text, type){ box.className = `message show ${type}`; box.textContent = text; }
-function clearMessage(box){ box.className = 'message'; box.textContent = ''; }
-function renderThreeStatSummary(group, summary){ group.summaryBox.style.display = 'grid'; group.totalCount.textContent = summary.total || 0; group.successCount.textContent = summary.success || 0; group.failedCount.textContent = summary.failed || 0; }
-function renderSolutionSummary(summary){ solution.summaryBox.style.display = 'grid'; solution.totalCount.textContent = summary.total || 0; solution.runningCount.textContent = summary.running || 0; solution.loginSuccessCount.textContent = summary.login_success || 0; solution.issueCount.textContent = summary.issues || 0; solution.serviceRunningCount.textContent = `${summary.running_services || 0}/${summary.total_services || 0}`; }
-async function setDatabaseVisible(group, visible, loader, showText, hideText){ if(visible){ await loader(); group.databaseCard.classList.remove('hidden'); group.toggleDbBtn.textContent = hideText; } else { group.databaseCard.classList.add('hidden'); group.toggleDbBtn.textContent = showText; } }
+function showMessage(el, text, type='info'){ el.className = `message show ${type}`; el.textContent = text; }
+function clearMessage(el){ el.className='message'; el.textContent=''; }
+function modalRoot(){ return document.getElementById('appModal'); }
+function closeModal(){ const root = modalRoot(); if(!root) return; root.classList.remove('show'); root.innerHTML=''; }
+function openModal(html){ const root = modalRoot(); if(!root) return; root.innerHTML = html; root.classList.add('show'); }
+function askInput({title, message='', defaultValue='', placeholder='', secret=false, confirmText='Xác nhận'}){ return new Promise(resolve => { openModal(`<div class="modal-card"><h3>${esc(title)}</h3><p>${esc(message)}</p><input id="appModalInput" ${secret?'type="password"':''} placeholder="${esc(placeholder)}" value="${esc(defaultValue)}"><div class="modal-actions"><button class="btn-secondary" id="appModalCancel">Hủy</button><button class="btn-primary" id="appModalOk">${esc(confirmText)}</button></div></div>`); const root = modalRoot(); const input = document.getElementById('appModalInput'); const done = (value) => { closeModal(); resolve(value); }; document.getElementById('appModalCancel').onclick = () => done(null); document.getElementById('appModalOk').onclick = () => done(input ? input.value : ''); if(input){ input.focus(); input.select?.(); input.onkeydown = (e) => { if(e.key==='Enter'){ e.preventDefault(); document.getElementById('appModalOk').click(); } if(e.key==='Escape'){ e.preventDefault(); done(null); } }; } root.onclick = (e) => { if(e.target === root) done(null); }; }); }
+function askConfirm({title, message='', confirmText='Đồng ý', danger=false}){ return new Promise(resolve => { openModal(`<div class="modal-card"><h3>${esc(title)}</h3><p>${esc(message)}</p><div class="modal-actions"><button class="btn-secondary" id="appModalCancel">Hủy</button><button class="${danger?'btn-danger':'btn-primary'}" id="appModalOk">${esc(confirmText)}</button></div></div>`); const root = modalRoot(); const done = (value) => { closeModal(); resolve(value); }; document.getElementById('appModalCancel').onclick = () => done(false); document.getElementById('appModalOk').onclick = () => done(true); root.onclick = (e) => { if(e.target === root) done(false); }; }); }
+function metricClass(value){ const m=String(value||'').match(/-?\d+(?:[.,]\d+)?/); if(!m) return 'metric-normal'; const n=parseFloat(m[0].replace(',','.')); if(Number.isNaN(n)) return 'metric-normal'; if(n>95) return 'metric-critical'; if(n>90) return 'metric-high'; if(n>80) return 'metric-warn'; return 'metric-normal'; }
+function renderMetric(value){ const t=String(value||'').trim(); return t ? `<span class="${metricClass(t)}">${esc(t)}</span>` : ''; }
+function groupNameOf(item){ return String(item?.group || 'A').trim() || 'A'; }
+function keyOf(section, item){ return section.keyFields.map(k => String(item?.[k] || '')).join('|'); }
+function ensureButtonState(btn, loading, text){ if(!btn) return; if(loading){ btn.dataset.originalText = btn.dataset.originalText || btn.textContent; btn.disabled = true; btn.textContent = text; } else { btn.disabled = false; btn.textContent = btn.dataset.originalText || btn.textContent; } }
+async function promptGroup(defaultValue='A'){ const name = await askInput({title:'Tên nhóm', message:'Nhập tên nhóm cần dùng.', defaultValue: defaultValue || 'A', placeholder:'Ví dụ A'}); if(name === null) return null; const clean = name.trim(); return clean || 'A'; }
+function serviceStateClass(status){ const value = String(status || 'Unknown').toLowerCase(); if(value==='running') return 'service-running'; if(['stopped','failed','error'].includes(value)) return 'service-stopped'; if(value==='disabled') return 'service-disabled'; if(['degraded','warning','restarting'].includes(value)) return 'service-warning'; return 'service-unknown'; }
+function renderServiceCell(item, index){ const services = Array.isArray(item.services) ? item.services : []; const summary = item.service_summary ? `<span class="badge badge-success">${esc(item.service_summary)}</span>` : ''; const note = (!summary) ? esc(item.note || '') : ''; if(!services.length) return `<div class="service-cell"><div class="service-header">${summary || note}</div></div>`; const state = ensureSolutionDetail(index); const open = !!state.servicesOpen; return `<div class="service-cell"><button class="service-toggle-btn ${open ? 'open' : ''}" data-action="toggle-service-details" data-index="${index}"><div class="service-header">${summary}<span class="toggle-icon" title="Xem service">${open ? '▾' : '▸'}</span></div></button>${open ? `<div class="service-list-wrap"><ul class="service-list">${services.map(s => { const status = String(s?.status || 'Unknown'); const cls = serviceStateClass(status); return `<li><span>${esc(s?.name || s?.service || 'Service')}</span> — <span class="${cls}">${esc(status)}</span></li>`; }).join('')}</ul></div>` : ''}</div>`; }
+function storagePercentValue(value){ const n = parseFloat(String(value || '').replace('%','').replace(',','.')); return Number.isFinite(n) ? n : null; }
+const solutionDetailState = {};
+function detailKey(index){ return `solution-${index}`; }
+function ensureSolutionDetail(index){ const k = detailKey(index); if(!solutionDetailState[k]) solutionDetailState[k] = {servicesOpen:false,storage:{open:false,loading:false,data:null,error:''}, index:{open:false,loading:false,data:null,error:''}}; return solutionDetailState[k]; }
+function getSolutionThresholdGb(item){ const section = sections.solution; return Number(section?.settings?.large_file_threshold_gb ?? item?.large_file_threshold_gb ?? 5) || 5; }
+function toggleServiceDetails(index){ const section = sections.solution; const state = ensureSolutionDetail(index); state.servicesOpen = !state.servicesOpen; const preserve = captureScrollState(section); renderWithScroll(section, preserve); }
+function renderDetailList(items, rowRenderer){ if(!Array.isArray(items) || !items.length) return `<div class="detail-empty">Không có dữ liệu.</div>`; return `<ul class="expand-list">${items.map(rowRenderer).join('')}</ul>`; }
+function renderSolutionExpandRow(item, index){ const state = ensureSolutionDetail(index); const visible = state.storage.open || state.index.open; if(!visible) return ''; const storage = state.storage; const idx = state.index; const currentThreshold = getSolutionThresholdGb(item); const storageData = storage.data || (item.large_files ? {items:item.large_files, threshold_gb:currentThreshold, raw_error:item.large_file_error || ''} : null); const indexRows = idx.data?.items || item.index_items || []; return `<tr class="expand-row"><td colspan="9"><div class="expand-panel"><div class="expand-grid">${storage.open ? `<div class="expand-card storage-card"><div class="expand-title">File lớn hơn ${esc(String(storageData?.threshold_gb ?? currentThreshold))} GB</div>${storage.loading ? `<div class="detail-empty">Đang tải...</div>` : storage.error ? `<div class="detail-empty">${esc(storage.error)}</div>` : renderDetailList(storageData?.items || [], row => `<li><span class="mono">${esc(row.size)}</span> — <span class="mono">${esc(row.path)}</span></li>`)}</div>` : ''}${idx.open ? `<div class="expand-card"><div class="expand-title">Index và LogTime mới nhất</div>${idx.loading ? `<div class="detail-empty">Đang tải...</div>` : (idx.error || item.index_error) ? `<div class="detail-empty">${esc(idx.error || item.index_error)}</div>` : indexRows.length ? `<table class="mini-table"><thead><tr><th>Index</th><th>LogTime</th></tr></thead><tbody>${indexRows.map(row => `<tr><td class="mono">${esc(row.index)}</td><td>${esc(row.log_time)}</td></tr>`).join('')}</tbody></table>` : `<div class="detail-empty">Không có dữ liệu index.</div>`}</div>` : ''}</div></div></td></tr>`; }
+async function toggleSolutionExtra(index, kind){ const section = sections.solution; const item = [...section.resultsMap.values()].find(x => x.__index===index) || mergedDisplayItems(section, section.currentGroup).find(x => x.__index===index) || null; const state = ensureSolutionDetail(index); const slot = state[kind]; slot.open = !slot.open; if(kind==='storage' && slot.open){ slot.data = null; slot.error = ''; } const preserve = captureScrollState(section); if(kind==='index' && slot.open && !slot.data && item?.index_items){ slot.data = {items:item.index_items, raw_error:item.index_error||''}; slot.error = item?.index_error || ''; renderWithScroll(section, preserve); return; } if(kind==='storage' && slot.open && !slot.loading){ slot.loading = true; renderWithScroll(section, preserve); try { const res = await apiPost('/api/solution-extra', {index, kind}); slot.data = res.data || {items:[], threshold_gb:getSolutionThresholdGb(item), raw_error:''}; slot.error = ''; } catch (e) { slot.error = e.message || 'Không tải được dữ liệu.'; } finally { slot.loading = false; renderWithScroll(section, preserve); } return; } renderWithScroll(section, preserve); }
+const secretState = { authed:false, auth:'', rows:[], open:false, message:'', messageType:'info' };
+function setSecretMessage(text='', type='info'){ secretState.message=text; secretState.messageType=type; }
 
-const ssh = {messageBox:sshMessageBox,summaryBox:sshSummaryBox,totalCount:sshTotalCount,successCount:sshSuccessCount,failedCount:sshFailedCount,databaseCard:sshDatabaseCard,databaseBody:sshDatabaseBody,resultBody:sshResultBody,toggleDbBtn:sshToggleDbBtn,hideDbBtn:sshHideDbBtn,saveDbBtn:sshSaveDbBtn,scanBtn:sshScanBtn,addRowBtn:sshAddRowBtn};
-const web = {messageBox:webMessageBox,summaryBox:webSummaryBox,totalCount:webTotalCount,successCount:webSuccessCount,failedCount:webFailedCount,databaseCard:webDatabaseCard,databaseBody:webDatabaseBody,resultBody:webResultBody,toggleDbBtn:webToggleDbBtn,hideDbBtn:webHideDbBtn,saveDbBtn:webSaveDbBtn,scanBtn:webScanBtn,addRowBtn:webAddRowBtn};
-const solution = {messageBox:solutionMessageBox,summaryBox:solutionSummaryBox,totalCount:solutionTotalCount,runningCount:solutionRunningCount,loginSuccessCount:solutionLoginSuccessCount,issueCount:solutionIssueCount,serviceRunningCount:solutionServiceRunningCount,databaseCard:solutionDatabaseCard,databaseBody:solutionDatabaseBody,resultBody:solutionResultBody,toggleDbBtn:solutionToggleDbBtn,hideDbBtn:solutionHideDbBtn,saveDbBtn:solutionSaveDbBtn,scanBtn:solutionScanBtn,addRowBtn:solutionAddRowBtn};
-let sshResultsState = [];
-let webResultsState = [];
-let solutionResultsState = [];
-
-
-function inferScanned(item){
-  if(!item || typeof item !== 'object') return false;
-  return !!(item.has_scanned || item.checked_url || item.http_status || item.status || item.public_ip || item.note || item.login_status || item.metric_source || item.cpu_percent || item.ram_percent || item.storage_percent);
-}
-
-function metricClass(value){
-  const text = String(value || '').trim();
-  const match = text.match(/-?\d+(?:[.,]\d+)?/);
-  if(!match) return 'metric-normal';
-  const num = parseFloat(match[0].replace(',', '.'));
-  if(Number.isNaN(num)) return 'metric-normal';
-  if(num > 95) return 'metric-critical';
-  if(num > 90) return 'metric-high';
-  if(num > 80) return 'metric-warn';
-  return 'metric-normal';
-}
-
-function renderMetric(value){
-  const text = String(value || '').trim();
-  if(!text) return '';
-  return `<span class="${metricClass(text)}">${esc(text)}</span>`;
-}
-
-
-function bindDeleteRow(body, emptyBuilder){
-  [...body.querySelectorAll('.btn-delete-row')].forEach(btn => {
-    btn.onclick = () => {
-      const rows = [...body.querySelectorAll('tr')].filter(row => !row.querySelector('.empty'));
-      if(rows.length <= 1){
-        showMessage(body.id.includes('solution') ? solution.messageBox : body.id.includes('web') ? web.messageBox : ssh.messageBox,'Database phải còn ít nhất 1 dòng.','error');
-        return;
-      }
-      btn.closest('tr').remove();
-      if(![...body.querySelectorAll('tr')].length){
-        body.innerHTML = emptyBuilder();
-      }
-    };
-  });
-}
-
-function collectRows(body, fields, optionalFields=[]){
-  const rows=[...body.querySelectorAll('tr')].filter(row => !row.querySelector('.empty'));
-  const items=[];
-  const invalidRows=[];
-  rows.forEach((row,index)=>{
-    row.classList.remove('invalid');
-    let invalid=false;
-    const item={};
-    fields.forEach((field)=>{
-      const input=row.querySelector(`[data-field="${field}"]`);
-      let value='';
-      if(input){ value=input.type==='checkbox' ? input.checked : input.value.trim(); }
-      item[field]=value;
-      if(!optionalFields.includes(field) && field !== 'checkservice' && field !== 'snmp_enabled' && !value) invalid=true;
-    });
-    if(invalid){
-      row.classList.add('invalid');
-      invalidRows.push(index+1);
-    }
-    items.push(item);
-  });
-  return {items, invalidRows};
-}
-
-function collectSolutionRows(body){
-  const rows=[...body.querySelectorAll('tr')].filter(row => !row.querySelector('.empty'));
-  const items=[];
-  const invalidRows=[];
-  rows.forEach((row,index)=>{
-    row.classList.remove('invalid');
-    const item={
-      name: row.querySelector('[data-field="name"]')?.value.trim() || '',
-      endpoint: row.querySelector('[data-field="endpoint"]')?.value.trim() || '',
-      username: row.querySelector('[data-field="username"]')?.value.trim() || '',
-      password: row.querySelector('[data-field="password"]')?.value.trim() || '',
-      ssh_username: row.querySelector('[data-field="ssh_username"]')?.value.trim() || '',
-      ssh_password: row.querySelector('[data-field="ssh_password"]')?.value.trim() || '',
-      snmp_enabled: row.querySelector('[data-field="snmp_enabled"]')?.checked || false,
-      snmp_community: row.querySelector('[data-field="snmp_community"]')?.value.trim() || '',
-      snmp_port: Number(row.querySelector('[data-field="snmp_port"]')?.value || 161) || 161,
-      checkservice: row.querySelector('[data-field="checkservice"]')?.checked || false,
-    };
-
-    let invalid = false;
-    if(!item.name || !item.endpoint) invalid = true;
-    if(item.snmp_enabled && !item.snmp_community) invalid = true;
-
-    if(invalid){
-      row.classList.add('invalid');
-      invalidRows.push(index+1);
-    }
-    items.push(item);
-  });
-  return {items, invalidRows};
-}
-
-function emptySshRow(){ return '<tr><td colspan="5" class="empty">Chưa có dữ liệu.</td></tr>'; }
-function emptyWebRow(){ return '<tr><td colspan="2" class="empty">Chưa có dữ liệu.</td></tr>'; }
-function emptySolutionRow(){ return '<tr><td colspan="11" class="empty">Chưa có dữ liệu.</td></tr>'; }
-
-function renderSshDatabaseRows(items){
-  const rows = (items || []).length ? items : [{ip:'', username:'', password:'pass_ssh_server_01', snmp_community:'snmpstring_mac_dinh'}];
-  ssh.databaseBody.innerHTML = rows.map(i=>`
-    <tr>
-      <td><input type="text" data-field="ip" value="${esc(i.ip)}"></td>
-      <td><input type="text" data-field="username" value="${esc(i.username)}"></td>
-      <td><input type="text" data-field="password" value="${esc(i.password)}" placeholder="pass_ssh_server_01"></td>
-      <td><input type="text" data-field="snmp_community" value="${esc(i.snmp_community || 'snmpstring_mac_dinh')}" placeholder="snmpstring_mac_dinh"></td>
-      <td><button type="button" class="btn-danger btn-delete-row">Xóa</button></td>
-    </tr>
-  `).join('');
-  bindDeleteRow(ssh.databaseBody, emptySshRow);
-}
-
-function renderWebDatabaseRows(items){
-  const rows = (items || []).length ? items : [{domain:''}];
-  web.databaseBody.innerHTML = rows.map(i=>`
-    <tr>
-      <td><input type="text" data-field="domain" value="${esc(i.domain)}"></td>
-      <td><button type="button" class="btn-danger btn-delete-row">Xóa</button></td>
-    </tr>
-  `).join('');
-  bindDeleteRow(web.databaseBody, emptyWebRow);
-}
-
-function renderSolutionDatabaseRows(items){
-  const rows = (items || []).length ? items : [{name:'',endpoint:'',username:'',password:'pass_giai_phap',ssh_username:'root',ssh_password:'pass_ssh_root',snmp_enabled:true,snmp_community:'snmpstring_mac_dinh',snmp_port:161,checkservice:false}];
-  solution.databaseBody.innerHTML = rows.map(i=>`
-    <tr>
-      <td><input type="text" data-field="name" value="${esc(i.name)}"></td>
-      <td><input type="text" data-field="endpoint" value="${esc(i.endpoint)}"></td>
-      <td><input type="text" data-field="username" value="${esc(i.username)}"></td>
-      <td><input type="text" data-field="password" value="${esc(i.password)}" placeholder="pass_giai_phap"></td>
-      <td><input type="text" data-field="ssh_username" value="${esc(i.ssh_username || '')}"></td>
-      <td><input type="text" data-field="ssh_password" value="${esc(i.ssh_password || '')}" placeholder="pass_ssh_root"></td>
-      <td style="text-align:center;"><input type="checkbox" data-field="snmp_enabled" ${i.snmp_enabled !== false ? 'checked' : ''}></td>
-      <td><input type="text" data-field="snmp_community" value="${esc(i.snmp_community || 'snmpstring_mac_dinh')}" placeholder="snmpstring_mac_dinh"></td>
-      <td><input type="number" data-field="snmp_port" value="${esc(i.snmp_port || 161)}" min="1"></td>
-      <td style="text-align:center;"><input type="checkbox" data-field="checkservice" ${i.checkservice ? 'checked' : ''}></td>
-      <td><button type="button" class="btn-danger btn-delete-row">Xóa</button></td>
-    </tr>
-  `).join('');
-  bindDeleteRow(solution.databaseBody, emptySolutionRow);
-}
-
-function setButtonLoading(btn, loadingText){
-  if(!btn) return;
-  if(!btn.dataset.originalText){
-    btn.dataset.originalText = btn.textContent;
+const sections = {
+  ssh: {
+    id:'ssh', mount:'sshSection', title:'MỤC I', subtitle:'Quét SSH / server', listUrl:'/api/database', saveUrl:'/api/database', settingsUrl:'/api/settings/ssh', scanUrl:'/api/scan', scanOneUrl:'/api/scan-one',
+    listField:'servers', payloadField:'servers', keyFields:['ip','username'], itemLabel:'server', defaultItem:(group='A')=>({group,name:'server',ip:'',username:'',password:'',snmp_community:'snmpstring_mac_dinh'}),
+    dbColumns:[{key:'group',label:'Nhóm'},{key:'name',label:'Name'},{key:'ip',label:'IP'},{key:'username',label:'Username'},{key:'password',label:'Password / alias'},{key:'snmp_community',label:'SNMP / alias'}],
+    required:['group','ip','username','password','snmp_community'], settings:{ssh_connect_timeout:5,ssh_command_timeout:10,snmp_timeout:1}, settingsFields:[{key:'ssh_connect_timeout',label:'SSH connect timeout (giây)',step:'0.5',help:'Thời gian chờ bắt tay SSH cho MỤC I.'},{key:'ssh_command_timeout',label:'SSH command timeout (giây)',step:'0.5',help:'Thời gian chờ chạy lệnh lấy metrics qua SSH cho MỤC I.'},{key:'snmp_timeout',label:'SNMP timeout (giây)',step:'0.5',help:'Thời gian chờ truy vấn SNMP proxy cho MỤC I.'}],
+    resultSummary(items){ const scanned = items.filter(x=>x.has_scanned); return { total:items.length, success:scanned.filter(x=>x.is_success).length, failed:scanned.filter(x=>!x.is_success).length, scanned: scanned.length }; },
+    rootStats(items){ const s=this.resultSummary(items); return [{k:'Thành phần',v:items.length},{k:'Đã quét',v:s.scanned},{k:'Thành công',v:s.success}]; },
+    renderResultRow(item, index){ return `<tr><td>${esc(item.name || 'server')}</td><td>${esc(item.ip)}</td><td>${esc(item.username)}</td><td>${item.metric_source ? `<span class="badge metric-source-badge ${item.metric_source==='SSH'?'badge-muted':'badge-info'}">${esc(item.metric_source)}</span>` : ''}</td><td>${renderMetric(item.cpu_percent)}</td><td>${renderMetric(item.ram_percent)}</td><td>${renderMetric(item.storage_percent)}</td><td>${esc(item.status || item.error || '')}</td><td><button class="btn-primary btn-scan-result" data-index="${index}">Quét</button></td></tr>`; }
+  },
+  web: {
+    id:'web', mount:'webSection', title:'MỤC II', subtitle:'Quét website / domain', listUrl:'/api/web-database', saveUrl:'/api/web-database', settingsUrl:'/api/settings/web', scanUrl:'/api/web-scan', scanOneUrl:'/api/web-scan-one',
+    listField:'websites', payloadField:'websites', keyFields:['domain'], itemLabel:'website', defaultItem:(group='A')=>({group,domain:''}),
+    dbColumns:[{key:'group',label:'Nhóm'},{key:'domain',label:'Domain'}], required:['group','domain'], settings:{web_connect_timeout:3,web_read_timeout:5}, settingsFields:[{key:'web_connect_timeout',label:'Web connect timeout (giây)',step:'0.5',help:'Thời gian chờ mở kết nối tới website ở MỤC II.'},{key:'web_read_timeout',label:'Web read timeout (giây)',step:'0.5',help:'Thời gian chờ đọc phản hồi HTTP ở MỤC II.'}],
+    resultSummary(items){ const scanned = items.filter(x=>x.has_scanned); return { total:items.length, success:scanned.filter(x=>x.is_success).length, failed:scanned.filter(x=>!x.is_success).length, scanned: scanned.length }; },
+    rootStats(items){ const s=this.resultSummary(items); return [{k:'Thành phần',v:items.length},{k:'Đã quét',v:s.scanned},{k:'200 OK',v:s.success}]; },
+    renderResultRow(item, index){ return `<tr><td>${esc(item.domain)}</td><td>${esc(item.public_ip || '')}</td><td class="mono url-break">${esc(item.checked_url || '')}</td><td>${esc(item.http_status || '')}</td><td>${item.has_scanned ? `<span class="badge ${item.is_success?'badge-success':'badge-fail'}">${esc(item.status || '')}</span>` : '<span class="badge badge-muted">Chưa quét</span>'}</td><td><button class="btn-primary btn-scan-result" data-index="${index}">Quét</button></td></tr>`; }
+  },
+  solution: {
+    id:'solution', mount:'solutionSection', title:'MỤC III', subtitle:'Quét giải pháp / service', listUrl:'/api/solution-database', saveUrl:'/api/solution-database', settingsUrl:'/api/settings/solution', scanUrl:'/api/solution-scan', scanOneUrl:'/api/solution-scan-one',
+    listField:'solutions', payloadField:'solutions', keyFields:['name','endpoint'], itemLabel:'giải pháp', defaultItem:(group='A')=>({group,name:'',endpoint:'',username:'',password:'',ssh_username:'root',ssh_password:'',snmp_community:'snmpstring_mac_dinh'}),
+    dbColumns:[{key:'group',label:'Nhóm'},{key:'name',label:'Giải pháp'},{key:'endpoint',label:'Endpoint / URL'},{key:'username',label:'User giao diện'},{key:'password',label:'Pass giao diện / alias'},{key:'ssh_username',label:'User SSH'},{key:'ssh_password',label:'Pass SSH / alias'},{key:'snmp_community',label:'SNMP / alias'}],
+    required:['group','name','endpoint'], settings:{web_connect_timeout:3,web_read_timeout:15,ssh_connect_timeout:5,ssh_command_timeout:10,snmp_timeout:1,large_file_threshold_gb:5}, settingsFields:[{key:'web_connect_timeout',label:'Web connect timeout (giây)',step:'0.5',help:'Giữ lại cho các kết nối web phụ ở MỤC III.'},{key:'web_read_timeout',label:'Web read timeout (giây)',step:'0.5',help:'Giữ lại cho các kết nối web phụ ở MỤC III.'},{key:'ssh_connect_timeout',label:'SSH connect timeout (giây)',step:'0.5',help:'Thời gian chờ SSH ở MỤC III.'},{key:'ssh_command_timeout',label:'SSH command timeout (giây)',step:'0.5',help:'Thời gian chờ chạy lệnh SSH ở MỤC III.'},{key:'snmp_timeout',label:'SNMP timeout (giây)',step:'0.5',help:'Thời gian chờ truy vấn SNMP proxy ở MỤC III.'},{key:'large_file_threshold_gb',label:'Ngưỡng file lớn (GB)',step:'0.5',help:'Dùng cho danh sách file lớn khi Storage > 80%.'}],
+    validate(item){ if(item.snmp_enabled && !String(item.snmp_community||'').trim()) return 'Bật SNMP thì phải có SNMP alias'; return ''; },
+    resultSummary(items){ const scanned = items.filter(x=>x.has_scanned); return { total:items.length, running:scanned.filter(x=>x.is_running).length, success:scanned.filter(x=>x.is_success).length, issues:scanned.filter(x=>!x.is_success).length, scanned: scanned.length }; },
+    rootStats(items){ const s=this.resultSummary(items); return [{k:'Thành phần',v:items.length},{k:'Đã quét',v:s.scanned},{k:'Thành công',v:s.success}]; },
+    renderResultRow(item, index){ const storageVal = storagePercentValue(item.storage_percent); const canStorageExpand = storageVal !== null && storageVal > 80; const state = ensureSolutionDetail(index); const nameCell = `<div class="name-inline result-cell"><span>${esc(item.name)}</span><button class="inline-icon-btn" title="Xổ index" data-action="toggle-solution-extra" data-kind="index" data-index="${index}">${state.index.open ? '▾' : '▸'}</button></div>`; const storageCell = `<div class="service-header result-cell">${renderMetric(item.storage_percent)}${canStorageExpand ? `<button class="inline-icon-btn" title="Xổ file lớn" data-action="toggle-solution-extra" data-kind="storage" data-index="${index}">${state.storage.open ? '▾' : '▸'}</button>` : ''}</div>`; const statusText = item.has_scanned ? (item.status || 'Chưa quét') : 'Chưa quét'; const loginText = item.has_scanned ? (item.login_status || '') : ''; return `<tr data-row-anchor="solution-${index}"><td class="result-cell">${nameCell}</td><td class="mono result-cell">${esc(item.endpoint)}</td><td class="status-cell">${statusText ? `<span class="badge ${item.has_scanned ? (item.is_success?'badge-success':'badge-fail') : 'badge-muted'}">${esc(statusText)}</span>` : '<span class="badge badge-muted">Chưa quét</span>'}${loginText ? `<span class="status-note">${esc(loginText)}</span>` : ''}</td><td class="result-cell">${item.metric_source ? `<span class="badge metric-source-badge badge-info">${esc(item.metric_source)}</span>` : ''}</td><td class="result-cell">${renderMetric(item.cpu_percent)}</td><td class="result-cell">${renderMetric(item.ram_percent)}</td><td class="result-cell">${storageCell}</td><td>${renderServiceCell(item, index)}</td><td class="result-cell"><button class="btn-primary btn-scan-result" data-scan-role="single" data-index="${index}">Quét</button></td></tr>${renderSolutionExpandRow(item, index)}`; }
   }
-  btn.disabled = true;
-  btn.textContent = loadingText;
+};
+
+for(const s of Object.values(sections)){
+  s.el = document.getElementById(s.mount);
+  s.items = [];
+  s.resultsMap = new Map();
+  s.currentGroup = null;
+  s.messageId = `${s.id}-message`;
+  s.detailTab = 'results';
+  s.scanJob = null;
+  s.scanMode = '';
+  s.settings = {...(s.settings || {})};
+}
+const secretSectionEl = document.getElementById('secretSection');
+
+function renderSecretSection(){
+  if(!secretSectionEl) return;
+  secretSectionEl.innerHTML = `
+    <div class="between">
+      <div>
+        <div class="section-head"><span class="pill">BÍ MẬT</span><h2>Quản lý mật khẩu / chuỗi bí mật</h2></div>
+        <p class="muted" style="margin-top:10px">Các ô password giờ chấp nhận cả alias lẫn mật khẩu thật. Khu vực này chỉ đồng bộ các secret chính ở phần trên của file .env. Muốn mở khu vực này phải nhập đúng mật khẩu quản trị.</p>
+      </div>
+      <div class="top-actions">
+        <button class="btn-secondary" data-secret-action="toggle">${secretState.open ? 'Thu gọn' : 'Mở quản lý bí mật'}</button>
+      </div>
+    </div>
+    <div class="message ${secretState.message ? 'show ' + secretState.messageType : ''}" id="secret-message">${esc(secretState.message || '')}</div>
+    ${!secretState.open ? '' : (!secretState.authed ? `<div class="secret-locked"><div class="inline-actions"><button class="btn-primary" data-secret-action="auth">Nhập mật khẩu quản lý</button><span class="compact-note">Mật khẩu do bạn đặt yêu cầu là DuyenV2.</span></div></div>` : `
+      <div class="view-card" style="margin-top:14px">
+        <div class="between" style="margin-bottom:12px"><div><h3>Danh sách bí mật đang quản lý</h3><p class="compact-note" style="margin-top:6px">Danh sách này lấy từ .env và được lưu ngược lại vào .env khi bạn chỉnh sửa. Bạn cũng có thể nhập mật khẩu thật trực tiếp tại từng thành phần nếu muốn.</p></div><div class="database-tools"><button class="btn-secondary" data-secret-action="add-row">Thêm bí mật</button><button class="btn-success" data-secret-action="save">Lưu bí mật</button></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Alias</th><th>Giá trị bí mật</th><th class="cell-actions">Thao tác</th></tr></thead><tbody>${secretState.rows.length ? secretState.rows.map((row, idx)=>`<tr data-secret-index="${idx}"><td><input type="text" data-secret-field="alias" value="${esc(row.alias || '')}" placeholder="vd: pass_giai_phap_moi"></td><td><input type="text" data-secret-field="value" value="${esc(row.value || '')}" placeholder="Nhập mật khẩu / community string"></td><td class="cell-actions"><button class="btn-danger" data-secret-action="delete-row" data-index="${idx}">Xóa</button></td></tr>`).join('') : `<tr><td colspan="3" class="empty">Chưa có bí mật quản lý nào.</td></tr>`}</tbody></table></div>
+      </div>`)}
+  `;
+  bindSecretEvents();
 }
 
-function resetButtonLoading(btn){
-  if(!btn) return;
-  btn.disabled = false;
-  btn.textContent = btn.dataset.originalText || 'Quét';
+function bindSecretEvents(){
+  if(!secretSectionEl) return;
+  secretSectionEl.querySelectorAll('[data-secret-action="toggle"]').forEach(btn => btn.onclick = () => { secretState.open = !secretState.open; setSecretMessage(''); renderSecretSection(); });
+  secretSectionEl.querySelectorAll('[data-secret-action="auth"]').forEach(btn => btn.onclick = () => requestSecretAccess());
+  secretSectionEl.querySelectorAll('[data-secret-action="add-row"]').forEach(btn => btn.onclick = () => { secretState.rows.push({alias:'', value:''}); renderSecretSection(); });
+  secretSectionEl.querySelectorAll('[data-secret-action="delete-row"]').forEach(btn => btn.onclick = () => { secretState.rows = secretState.rows.filter((_, idx) => idx !== Number(btn.dataset.index)); renderSecretSection(); });
+  secretSectionEl.querySelectorAll('[data-secret-action="save"]').forEach(btn => btn.onclick = () => saveSecrets(btn));
 }
 
-function replaceResultAt(items, index, nextItem){
-  const clone = Array.isArray(items) ? [...items] : [];
-  if(index < 0) return clone;
-  while(clone.length <= index){
-    clone.push(null);
-  }
-  clone[index] = nextItem;
-  return clone.filter(item => item !== null);
-}
-
-function recomputeThreeSummary(items){
-  const safeItems = Array.isArray(items) ? items : [];
-  const scannedItems = safeItems.filter(item => item && item.has_scanned);
-  const success = scannedItems.filter(item => item && item.is_success).length;
-  return { total: safeItems.length, success, failed: scannedItems.length - success };
-}
-
-function recomputeSolutionSummary(items){
-  const safeItems = Array.isArray(items) ? items : [];
-  const scannedItems = safeItems.filter(item => item && item.has_scanned);
-  const running = scannedItems.filter(item => item && item.is_running).length;
-  const login_success = scannedItems.filter(item => item && item.is_success).length;
-  const running_services = scannedItems.reduce((sum, item) => sum + Number(item?.service_running_count || 0), 0);
-  const total_services = scannedItems.reduce((sum, item) => sum + Number(item?.service_total_count || 0), 0);
-  return {
-    total: safeItems.length,
-    running,
-    login_success,
-    issues: scannedItems.length - login_success,
-    running_services,
-    total_services,
-  };
-}
-
-function buildSshPlaceholderResults(items){
-  return (items || []).map(item => ({ ip: item.ip || '', username: item.username || '', metric_source: '', cpu_percent: '', ram_percent: '', storage_percent: '', status: '', is_success: false, error: '', has_scanned: false }));
-}
-
-function buildWebPlaceholderResults(items){
-  return (items || []).map(item => ({ domain: item.domain || '', public_ip: '', checked_url: '', http_status: '', status: '', is_success: false, error: '', has_scanned: false }));
-}
-
-function buildSolutionPlaceholderResults(items){
-  return (items || []).map(item => ({ name: item.name || '', endpoint: item.endpoint || '', username: item.username || '', checked_url: '', http_status: '', login_status: '', running_status: '', status: '', note: '', is_success: false, is_running: false, checkservice: !!item.checkservice, service_summary: '', services: [], cpu_percent: '', ram_percent: '', storage_percent: '', service_running_count: 0, service_total_count: 0, metric_source: '', has_scanned: false }));
-}
-
-
-function mergeResultsByKey(currentItems, databaseItems, keyBuilder, placeholderBuilder){
-  const currentMap = new Map((Array.isArray(currentItems) ? currentItems : []).map(item => [keyBuilder(item), item]));
-  return (databaseItems || []).map((dbItem, index) => {
-    const key = keyBuilder(dbItem);
-    const existing = currentMap.get(key);
-    if(existing){
-      return { ...existing, ...Object.fromEntries(Object.entries(dbItem).filter(([_, v]) => v !== undefined)), has_scanned: !!existing.has_scanned };
-    }
-    return placeholderBuilder(dbItem, index);
-  });
-}
-
-function renderSshResults(items){
-  sshResultsState = Array.isArray(items) ? items.map(i => ({has_scanned:true, ...i})) : [];
-  ssh.resultBody.innerHTML = sshResultsState.length ? sshResultsState.map((i,index)=>`
-    <tr>
-      <td>${esc(i.ip)}</td>
-      <td>${i.has_scanned ? `<span class="badge ${String(i.metric_source || '').includes('150') ? 'badge-info' : (String(i.metric_source || '').includes('132') ? 'badge-info' : (i.metric_source === 'SSH' ? 'badge-muted' : (i.metric_source ? 'badge-success' : 'badge-failed')))}">${esc(i.metric_source || '')}</span>` : ''}</td>
-      <td>${esc(i.username)}</td>
-      <td>${renderMetric(i.cpu_percent || '')}</td>
-      <td>${renderMetric(i.ram_percent || '')}</td>
-      <td>${renderMetric(i.storage_percent || '')}</td>
-      <td>${i.has_scanned ? `<span class="badge ${i.is_success?'badge-success':'badge-failed'}" title="${esc(i.error || '')}">${esc(i.status || '')}</span>` : ''}</td>
-      <td><button type="button" class="btn-secondary btn-single-scan" data-type="ssh" data-index="${index}">Quét</button></td>
-    </tr>
-  `).join('') : '<tr><td colspan="8" class="empty">Chưa có dữ liệu.</td></tr>';
-}
-
-function renderWebResults(items){
-  webResultsState = Array.isArray(items) ? items.map(i => ({...i, has_scanned: inferScanned(i)})) : [];
-  web.resultBody.innerHTML = webResultsState.length ? webResultsState.map((i,index)=>`
-    <tr>
-      <td>${esc(i.domain)}</td>
-      <td class="mono">${esc(i.public_ip || '')}</td>
-      <td class="mono">${esc(i.checked_url || '')}</td>
-      <td>${esc(i.http_status || '')}</td>
-      <td>${i.has_scanned ? `<span class="badge ${i.is_success?'badge-success':'badge-failed'}">${esc(i.status || '')}</span>` : ''}</td>
-      <td><button type="button" class="btn-secondary btn-single-scan" data-type="web" data-index="${index}">Quét</button></td>
-    </tr>
-  `).join('') : '<tr><td colspan="6" class="empty">Chưa có dữ liệu.</td></tr>';
-}
-
-function renderSolutionResults(items){
-  solutionResultsState = Array.isArray(items) ? items.map(i => ({has_scanned:true, ...i})) : [];
-  if(!solutionResultsState.length){
-    solution.resultBody.innerHTML = '<tr><td colspan="9" class="empty">Chưa có dữ liệu.</td></tr>';
-    return;
-  }
-
-  const rows=[];
-  solutionResultsState.forEach((item, idx)=>{
-    const canExpand = item.checkservice && Array.isArray(item.services) && item.services.length > 0;
-    const loginTitle = [item.http_status, item.checked_url, item.note].filter(Boolean).join(' | ');
-    const runningTitle = item.service_total_count ? `${item.service_running_count || 0}/${item.service_total_count || 0} service running` : '';
-
-    const metricSourceClass =
-      item.metric_source === 'SNMP' ? 'badge-info' :
-      item.metric_source === 'SSH' ? 'badge-muted' :
-      item.metric_source === 'WEB' ? 'badge-success' : 'badge-failed';
-
-    rows.push(`
-      <tr>
-        <td>
-          <div class="solution-name">
-            ${canExpand ? `<button type="button" class="toggle-arrow" data-target="svc-${idx}">▶</button>` : ''}
-            <span>${esc(item.name)}</span>
-          </div>
-        </td>
-        <td class="mono">${esc(item.endpoint)}</td>
-        <td>${item.has_scanned ? `<span class="badge ${item.is_success ? 'badge-success' : 'badge-failed'}" title="${esc(loginTitle)}">${esc(item.login_status || '')}</span>` : ''}</td>
-        <td>${item.has_scanned ? `<span class="badge ${item.is_running ? 'badge-info' : 'badge-failed'}" title="${esc(runningTitle)}">${esc(item.running_status || '')}</span>` : ''}</td>
-        <td>${item.has_scanned ? `<span class="badge ${metricSourceClass}">${esc(item.metric_source || '')}</span>` : ''}</td>
-        <td>${renderMetric(item.cpu_percent || '')}</td>
-        <td>${renderMetric(item.ram_percent || '')}</td>
-        <td>${renderMetric(item.storage_percent || '')}</td>
-        <td><button type="button" class="btn-secondary btn-single-scan" data-type="solution" data-index="${idx}">Quét</button></td>
-      </tr>
-    `);
-
-    if(canExpand){
-      rows.push(`
-        <tr class="service-row hidden" id="svc-${idx}">
-          <td colspan="9">
-            <div class="service-wrap">
-              ${item.services.map(s=>`
-                <div class="service-item">
-                  <div><strong>${esc(s.name)}</strong></div>
-                  <div><span class="badge ${String(s.status).toLowerCase()==='running' ? 'badge-success' : 'badge-failed'}">${esc(s.status)}</span></div>
-                </div>
-              `).join('')}
-            </div>
-          </td>
-        </tr>
-      `);
-    }
-  });
-
-  solution.resultBody.innerHTML = rows.join('');
-
-  [...solution.resultBody.querySelectorAll('.toggle-arrow')].forEach(btn => {
-    btn.addEventListener('click', () => {
-      const row = document.getElementById(btn.dataset.target);
-      const open = !row.classList.contains('hidden');
-      row.classList.toggle('hidden');
-      btn.classList.toggle('open', !open);
-      btn.textContent = open ? '▶' : '▼';
-    });
-  });
-}
-
-async function loadSshDatabase(){
-  ssh.databaseBody.innerHTML = '<tr><td colspan="5" class="empty">Đang tải database SSH...</td></tr>';
-  const data = await apiGet('/api/database');
-  const items = data.servers || [];
-  renderSshDatabaseRows(items);
-  sshResultsState = mergeResultsByKey(sshResultsState, items, item => `${item.ip || ''}|${item.username || ''}`, item => ({ ip: item.ip || '', username: item.username || '', metric_source: '', cpu_percent: '', ram_percent: '', storage_percent: '', status: '', is_success: false, error: '', has_scanned: false }));
-  ssh.resultBody.innerHTML = '';
-  renderSshResults(sshResultsState);
-}
-
-async function loadWebDatabase(){
-  web.databaseBody.innerHTML = '<tr><td colspan="2" class="empty">Đang tải database website...</td></tr>';
-  const data = await apiGet('/api/web-database');
-  const items = data.websites || [];
-  renderWebDatabaseRows(items);
-  webResultsState = mergeResultsByKey(webResultsState, items, item => `${item.domain || ''}`, item => ({ domain: item.domain || '', public_ip: '', checked_url: '', http_status: '', status: '', is_success: false, error: '', has_scanned: false }));
-  web.resultBody.innerHTML = '';
-  renderWebResults(webResultsState);
-}
-
-async function loadSolutionDatabase(){
-  solution.databaseBody.innerHTML = '<tr><td colspan="11" class="empty">Đang tải database giải pháp...</td></tr>';
-  const data = await apiGet('/api/solution-database');
-  const items = data.solutions || [];
-  renderSolutionDatabaseRows(items);
-  solutionResultsState = mergeResultsByKey(solutionResultsState, items, item => `${item.name || ''}|${item.endpoint || ''}`, item => ({ name: item.name || '', endpoint: item.endpoint || '', username: item.username || '', checked_url: '', http_status: '', login_status: '', running_status: '', status: '', note: '', is_success: false, is_running: false, checkservice: !!item.checkservice, service_summary: '', services: [], cpu_percent: '', ram_percent: '', storage_percent: '', service_running_count: 0, service_total_count: 0, metric_source: '', has_scanned: false }));
-  solution.resultBody.innerHTML = '';
-  renderSolutionResults(solutionResultsState);
-}
-
-function addSshRow(){
-  const items = collectRows(ssh.databaseBody,['ip','username','password','snmp_community']).items;
-  items.push({ip:'', username:'', password:'pass_ssh_server_01', snmp_community:'snmpstring_mac_dinh'});
-  renderSshDatabaseRows(items);
-}
-
-function addWebRow(){
-  const items = collectRows(web.databaseBody,['domain']).items;
-  items.push({domain:''});
-  renderWebDatabaseRows(items);
-}
-
-function addSolutionRow(){
-  const items = collectSolutionRows(solution.databaseBody).items;
-  items.push({name:'',endpoint:'',username:'',password:'pass_giai_phap',ssh_username:'root',ssh_password:'pass_ssh_root',snmp_enabled:true,snmp_community:'snmpstring_mac_dinh',snmp_port:161,checkservice:false});
-  renderSolutionDatabaseRows(items);
-}
-
-async function saveSshDatabase(){
-  clearMessage(ssh.messageBox);
-  const {items,invalidRows}=collectRows(ssh.databaseBody,['ip','username','password','snmp_community']);
-  if(!items.length){ showMessage(ssh.messageBox,'Database SSH phải có ít nhất 1 dòng.','error'); return; }
-  if(invalidRows.length){ showMessage(ssh.messageBox,`Các dòng SSH ${invalidRows.join(', ')} đang thiếu IP, username, password alias hoặc SNMP alias.`,'error'); return; }
-  ssh.saveDbBtn.disabled=true;
+async function requestSecretAccess(){
+  const auth = await askInput({title:'Mật khẩu quản lý bí mật', message:'Nhập mật khẩu để xem và sửa bí mật.', secret:true, confirmText:'Mở'});
+  if(auth === null) return;
   try {
-    const data=await apiPost('/api/database',{servers:items});
-    renderSshDatabaseRows(data.servers || []);
-    sshResultsState = mergeResultsByKey(sshResultsState, data.servers || [], item => `${item.ip || ''}|${item.username || ''}`, item => ({ ip: item.ip || '', username: item.username || '', metric_source: '', cpu_percent: '', ram_percent: '', storage_percent: '', status: '', is_success: false, error: '', has_scanned: false }));
-    renderSshResults(sshResultsState);
-    showMessage(ssh.messageBox, data.message || 'Đã lưu database SSH thành công.','success');
-  } catch(e){
-    showMessage(ssh.messageBox,e.message || 'Không lưu được database SSH.','error');
-  } finally {
-    ssh.saveDbBtn.disabled=false;
-  }
-}
-
-async function saveWebDatabase(){
-  clearMessage(web.messageBox);
-  const {items,invalidRows}=collectRows(web.databaseBody,['domain']);
-  if(!items.length){ showMessage(web.messageBox,'Database website phải có ít nhất 1 dòng.','error'); return; }
-  if(invalidRows.length){ showMessage(web.messageBox,`Các dòng website ${invalidRows.join(', ')} đang thiếu domain.`,'error'); return; }
-  web.saveDbBtn.disabled=true;
-  try {
-    const data=await apiPost('/api/web-database',{websites:items});
-    renderWebDatabaseRows(data.websites || []);
-    webResultsState = mergeResultsByKey(webResultsState, data.websites || [], item => `${item.domain || ''}`, item => ({ domain: item.domain || '', public_ip: '', checked_url: '', http_status: '', status: '', is_success: false, error: '', has_scanned: false }));
-    renderWebResults(webResultsState);
-    showMessage(web.messageBox, data.message || 'Đã lưu database website thành công.','success');
-  } catch(e){
-    showMessage(web.messageBox,e.message || 'Không lưu được database website.','error');
-  } finally {
-    web.saveDbBtn.disabled=false;
-  }
-}
-
-async function saveSolutionDatabase(){
-  clearMessage(solution.messageBox);
-  const {items,invalidRows}=collectSolutionRows(solution.databaseBody);
-  if(!items.length){ showMessage(solution.messageBox,'Database giải pháp phải có ít nhất 1 dòng.','error'); return; }
-  if(invalidRows.length){ showMessage(solution.messageBox,`Các dòng giải pháp ${invalidRows.join(', ')} đang thiếu tên, endpoint hoặc SNMP alias khi SNMP đang bật.`,'error'); return; }
-  solution.saveDbBtn.disabled=true;
-  try {
-    const data=await apiPost('/api/solution-database',{solutions:items});
-    renderSolutionDatabaseRows(data.solutions || []);
-    solutionResultsState = mergeResultsByKey(solutionResultsState, data.solutions || [], item => `${item.name || ''}|${item.endpoint || ''}`, item => ({ name: item.name || '', endpoint: item.endpoint || '', username: item.username || '', checked_url: '', http_status: '', login_status: '', running_status: '', status: '', note: '', is_success: false, is_running: false, checkservice: !!item.checkservice, service_summary: '', services: [], cpu_percent: '', ram_percent: '', storage_percent: '', service_running_count: 0, service_total_count: 0, metric_source: '', has_scanned: false }));
-    renderSolutionResults(solutionResultsState);
-    showMessage(solution.messageBox, data.message || 'Đã lưu database giải pháp thành công.','success');
-  } catch(e){
-    showMessage(solution.messageBox,e.message || 'Không lưu được database giải pháp.','error');
-  } finally {
-    solution.saveDbBtn.disabled=false;
-  }
-}
-
-async function scanSsh(){
-  clearMessage(ssh.messageBox);
-  ssh.scanBtn.disabled=true;
-  showMessage(ssh.messageBox,'Đang quét server theo cơ chế đa luồng: SSH vào 150 chạy SNMP -> lỗi thì 132 -> lỗi thì SSH vào máy đích...','info');
-  try {
-    const data=await apiPost('/api/scan');
-    renderThreeStatSummary(ssh,data.summary||{});
-    renderSshResults(data.results||[]);
-    showMessage(ssh.messageBox,`Quét xong ${data.summary.total} máy. Thành công: ${data.summary.success}, thất bại: ${data.summary.failed}.`,'success');
-  } catch(e){
-    showMessage(ssh.messageBox,e.message || 'Có lỗi xảy ra khi quét SSH.','error');
-  } finally {
-    ssh.scanBtn.disabled=false;
-  }
-}
-
-async function scanWebsites(){
-  clearMessage(web.messageBox);
-  web.scanBtn.disabled=true;
-  showMessage(web.messageBox,'Đang quét website bằng đa luồng với timeout ngắn hơn để phản hồi nhanh...','info');
-  try {
-    const data=await apiPost('/api/web-scan');
-    renderThreeStatSummary(web,data.summary||{});
-    renderWebResults(data.results||[]);
-    showMessage(web.messageBox,`Quét website xong ${data.summary.total} domain. 200 OK: ${data.summary.success}, còn lại: ${data.summary.failed}.`,'success');
-  } catch(e){
-    showMessage(web.messageBox,e.message || 'Có lỗi xảy ra khi quét website.','error');
-  } finally {
-    web.scanBtn.disabled=false;
-  }
-}
-
-async function scanSolutions(){
-  clearMessage(solution.messageBox);
-  solution.scanBtn.disabled=true;
-  showMessage(solution.messageBox,'Đang quét giải pháp theo thứ tự 150 chạy SNMP -> 132 chạy SNMP -> SSH máy đích -> WEB, chạy đa luồng để giảm thời gian chờ...','info');
-  try {
-    const data=await apiPost('/api/solution-scan');
-    renderSolutionSummary(data.summary||{});
-    renderSolutionResults(data.results||[]);
-    showMessage(solution.messageBox,`Quét giải pháp xong ${data.summary.total} mục. Đang chạy: ${data.summary.running}, đăng nhập thành công: ${data.summary.login_success}, service running: ${data.summary.running_services || 0}/${data.summary.total_services || 0}, cần kiểm tra thêm: ${data.summary.issues}.`,'success');
-  } catch(e){
-    showMessage(solution.messageBox,e.message || 'Có lỗi xảy ra khi quét giải pháp.','error');
-  } finally {
-    solution.scanBtn.disabled=false;
-  }
-}
-
-async function scanSingle(type, index, btn){
-  const config = {
-    ssh: {
-      url: '/api/scan-one',
-      box: ssh.messageBox,
-      loadingText: 'Đang quét...',
-      successText: (result) => `Đã quét riêng server ${result.ip || `#${index + 1}`}.`,
-      apply(result){
-        sshResultsState = replaceResultAt(sshResultsState, index, {has_scanned:true, ...result});
-        renderSshResults(sshResultsState);
-        renderThreeStatSummary(ssh, recomputeThreeSummary(sshResultsState));
-      },
-    },
-    web: {
-      url: '/api/web-scan-one',
-      box: web.messageBox,
-      loadingText: 'Đang quét...',
-      successText: (result) => `Đã quét riêng website ${result.domain || `#${index + 1}`}.`,
-      apply(result){
-        webResultsState = replaceResultAt(webResultsState, index, {has_scanned:true, ...result});
-        renderWebResults(webResultsState);
-        renderThreeStatSummary(web, recomputeThreeSummary(webResultsState));
-      },
-    },
-    solution: {
-      url: '/api/solution-scan-one',
-      box: solution.messageBox,
-      loadingText: 'Đang quét...',
-      successText: (result) => `Đã quét riêng giải pháp ${result.name || `#${index + 1}`}.`,
-      apply(result){
-        solutionResultsState = replaceResultAt(solutionResultsState, index, {has_scanned:true, ...result});
-        renderSolutionResults(solutionResultsState);
-        renderSolutionSummary(recomputeSolutionSummary(solutionResultsState));
-      },
-    },
-  }[type];
-
-  if(!config) return;
-
-  clearMessage(config.box);
-  setButtonLoading(btn, config.loadingText);
-  try {
-    const data = await apiPost(config.url, {index});
-    config.apply(data.result);
-    showMessage(config.box, config.successText(data.result), 'success');
+    const data = await apiGet(`/api/secrets?auth=${encodeURIComponent(auth)}`);
+    secretState.authed = true; secretState.auth = auth; secretState.rows = data.secrets || []; setSecretMessage('Đã mở khu vực quản lý bí mật.', 'success');
   } catch (e) {
-    showMessage(config.box, e.message || 'Không quét riêng được dòng này.', 'error');
-  } finally {
-    resetButtonLoading(btn);
+    secretState.authed = false; secretState.auth = ''; setSecretMessage(e.message || 'Không mở được khu vực bí mật.', 'error');
   }
+  renderSecretSection();
 }
 
-document.addEventListener('click', (event) => {
-  const btn = event.target.closest('.btn-single-scan');
-  if(!btn) return;
-  const type = btn.dataset.type;
-  const index = Number(btn.dataset.index);
-  if(Number.isNaN(index)) return;
-  scanSingle(type, index, btn);
-});
+async function saveSecrets(btn){
+  ensureButtonState(btn, true, 'Đang lưu...');
+  try {
+    const rows = [...secretSectionEl.querySelectorAll('tbody tr[data-secret-index]')].map(tr => ({ alias: (tr.querySelector('[data-secret-field="alias"]')?.value || '').trim(), value: (tr.querySelector('[data-secret-field="value"]')?.value || '') }));
+    const data = await apiPost('/api/secrets', { auth: secretState.auth, secrets: rows });
+    secretState.rows = data.secrets || []; setSecretMessage('Đã lưu bí mật thành công.', 'success');
+    renderSecretSection();
+  } catch (e) {
+    setSecretMessage(e.message || 'Không lưu được bí mật.', 'error');
+    renderSecretSection();
+  } finally { ensureButtonState(btn, false); }
+}
 
-ssh.toggleDbBtn.addEventListener('click', async ()=>{
-  try { await setDatabaseVisible(ssh, ssh.databaseCard.classList.contains('hidden'), loadSshDatabase, 'Xem database SSH', 'Ẩn database SSH'); }
-  catch(e){ showMessage(ssh.messageBox,e.message || 'Không tải được database SSH.','error'); }
-});
-ssh.hideDbBtn.addEventListener('click', async ()=> setDatabaseVisible(ssh,false,loadSshDatabase,'Xem database SSH','Ẩn database SSH'));
-ssh.saveDbBtn.addEventListener('click', saveSshDatabase);
-ssh.scanBtn.addEventListener('click', scanSsh);
-ssh.addRowBtn.addEventListener('click', addSshRow);
+function attachIndices(section, items){ return (items || []).map((item, index) => ({...item, group: groupNameOf(item), __index:index})); }
+function placeholderFor(section, item){
+  if(section.id==='ssh') return {group:groupNameOf(item),name:item.name||'server',ip:item.ip||'',username:item.username||'',metric_source:'',cpu_percent:'',ram_percent:'',storage_percent:'',status:'',is_success:false,error:'',has_scanned:false};
+  if(section.id==='web') return {group:groupNameOf(item),domain:item.domain||'',public_ip:'',checked_url:'',http_status:'',status:'',is_success:false,error:'',has_scanned:false};
+  return {group:groupNameOf(item),name:item.name||'',endpoint:item.endpoint||'',username:item.username||'',login_status:'',running_status:'',metric_source:'',cpu_percent:'',ram_percent:'',storage_percent:'',service_summary:'',services:[],note:'',is_success:false,is_running:false,has_scanned:false};
+}
+function resultPriority(section, item){
+  if(item?.has_scanned && item?.is_success) return 0;
+  if(item?.has_scanned) return 1;
+  return 2;
+}
+function mergedDisplayItems(section, group=null){
+  const src = group ? section.items.filter(x => groupNameOf(x)===group) : section.items;
+  const merged = src.map(item => ({ ...placeholderFor(section, item), ...clone(section.resultsMap.get(keyOf(section, item)) || {}), ...item, has_scanned: !!(section.resultsMap.get(keyOf(section, item))?.has_scanned) }));
+  return merged.sort((a,b) => (a.__index ?? 0) - (b.__index ?? 0));
+}
+function allGroups(section){ const groups=[...new Set(section.items.map(groupNameOf))].sort((a,b)=>a.localeCompare(b,'vi')); return groups.length?groups:['A']; }
+function sectionMessageEl(section){ return document.getElementById(section.messageId); }
+function renderSettingsView(section){ const fields = Array.isArray(section.settingsFields) ? section.settingsFields : []; const current = {...(section.settings || {})}; return `<div class="view-card ${section.detailTab!=='settings'?'hidden':''}" data-view="settings"><div class="between" style="margin-bottom:12px"><div><h3>Cài đặt timeout</h3><p class="compact-note" style="margin-top:6px">Mỗi mục có timeout riêng, không dùng chung. Sửa xong bấm lưu để áp dụng cho lần quét sau.</p></div><div class="database-tools"><button class="btn-success" data-action="save-settings">Lưu cài đặt</button></div></div><div class="settings-grid">${fields.map(field => `<div class="setting-card"><label for="${section.id}-${field.key}">${esc(field.label)}</label><input id="${section.id}-${field.key}" type="number" min="0.1" step="${esc(field.step || '0.5')}" data-setting-key="${field.key}" value="${esc(current[field.key] ?? '')}"><div class="setting-help">${esc(field.help || '')}</div></div>`).join('')}</div></div>`; }
+function resultHeaders(section){ if(section.id==='ssh') return ['Name','IP','Username','Nguồn metrics','CPU','RAM','Storage','Trạng thái','Quét']; if(section.id==='web') return ['Domain','IP public','URL kiểm tra','HTTP status','Kết quả','Quét']; return ['Giải pháp','Endpoint / URL','Trạng thái','Nguồn metrics','CPU','RAM','Storage','Service','Quét']; }
 
-web.toggleDbBtn.addEventListener('click', async ()=>{
-  try { await setDatabaseVisible(web, web.databaseCard.classList.contains('hidden'), loadWebDatabase, 'Xem database website', 'Ẩn database website'); }
-  catch(e){ showMessage(web.messageBox,e.message || 'Không tải được database website.','error'); }
-});
-web.hideDbBtn.addEventListener('click', async ()=> setDatabaseVisible(web,false,loadWebDatabase,'Xem database website','Ẩn database website'));
-web.saveDbBtn.addEventListener('click', saveWebDatabase);
-web.scanBtn.addEventListener('click', scanWebsites);
-web.addRowBtn.addEventListener('click', addWebRow);
+function renderSection(section){
+  const summary = section.resultSummary(mergedDisplayItems(section));
+  const root = section.currentGroup === null;
+  section.el.innerHTML = `
+    <div class="header-grid">
+      <div>
+        <div class="section-head"><span class="pill">${section.title}</span><h2>${section.subtitle}</h2></div>
+        <p class="muted" style="margin-top:10px">${root ? 'Chọn nhóm để đi vào trong. Ngoài cùng hiển thị tổng quan từng nhóm, bên trong hiển thị rõ kết quả và database.' : `Đang ở trong nhóm ${esc(section.currentGroup)}. Dùng ba tab lớn để chuyển giữa Kết quả quét, Database và Cài đặt.`}</p>
+      </div>
+      <div class="top-actions">
+        ${root ? `${scanButtonHtml(section,'group',`<button class=\"btn-primary\" data-action=\"scan-all\" data-scan-role=\"group\">Quét tất cả nhóm</button>`)}<button class="btn-success" data-action="add-item-root">Thêm thành phần mới</button>` : `<button class="btn-warning" data-action="rename-group">Đổi tên nhóm</button>${scanButtonHtml(section,'group',`<button class=\"btn-primary\" data-action=\"scan-group\" data-scan-role=\"group\">Quét nhóm ${esc(section.currentGroup)}</button>`)}<button class="btn-danger" data-action="delete-group">Xóa nhóm</button>`}
+      </div>
+    </div>
+    <div class="message" id="${section.messageId}"></div>
+    <div class="summary">
+      <div class="stat"><div class="label">Tổng thành phần</div><div class="value">${summary.total || 0}</div></div>
+      <div class="stat"><div class="label">Đã quét</div><div class="value">${summary.scanned || 0}</div></div>
+      ${section.id==='solution' ? `<div class="stat"><div class="label">Thành công</div><div class="value">${summary.success || 0}</div></div><div class="stat"><div class="label">Đang chạy / cần kiểm tra</div><div class="value">${(summary.running || 0)} / ${(summary.issues || 0)}</div></div>` : `<div class="stat"><div class="label">Thành công</div><div class="value">${summary.success || 0}</div></div><div class="stat"><div class="label">Lỗi / chưa OK</div><div class="value">${summary.failed || 0}</div></div>`}
+    </div>
+    ${root ? renderGroupBrowser(section) : renderGroupDetail(section)}
+  `;
+  bindSectionEvents(section);
+}
 
-solution.toggleDbBtn.addEventListener('click', async ()=>{
-  try { await setDatabaseVisible(solution, solution.databaseCard.classList.contains('hidden'), loadSolutionDatabase, 'Xem database giải pháp', 'Ẩn database giải pháp'); }
-  catch(e){ showMessage(solution.messageBox,e.message || 'Không tải được database giải pháp.','error'); }
-});
-solution.hideDbBtn.addEventListener('click', async ()=> setDatabaseVisible(solution,false,loadSolutionDatabase,'Xem database giải pháp','Ẩn database giải pháp'));
-solution.saveDbBtn.addEventListener('click', saveSolutionDatabase);
-solution.scanBtn.addEventListener('click', scanSolutions);
-solution.addRowBtn.addEventListener('click', addSolutionRow);
+function renderGroupBrowser(section){
+  const groups = allGroups(section);
+  return `<div class="group-grid">${groups.map(group => {
+    const items = mergedDisplayItems(section, group);
+    const stats = section.rootStats(items);
+    return `<div class="group-card"><div class="between"><div><div class="group-title">Nhóm ${esc(group)}</div><div class="group-meta">${items.length} thành phần</div></div><span class="badge badge-info">${section.title}</span></div><div class="group-stats">${stats.map(stat=>`<div class="mini"><div class="k">${esc(stat.k)}</div><div class="v">${esc(stat.v)}</div></div>`).join('')}</div><div class="toolbar"><button class="btn-secondary" data-action="open-group" data-group="${esc(group)}">Mở nhóm</button><button class="btn-warning" data-action="rename-this-group" data-group="${esc(group)}">Đổi tên nhóm</button>${scanButtonHtml(section,'group',`<button class=\"btn-primary\" data-action=\"scan-this-group\" data-scan-role=\"group\" data-group=\"${esc(group)}\">Quét nhóm</button>`)}<button class="btn-danger" data-action="delete-this-group" data-group="${esc(group)}">Xóa nhóm</button></div></div>`;
+  }).join('')}</div>`;
+}
 
-Promise.allSettled([loadSshDatabase(), loadWebDatabase(), loadSolutionDatabase()]);
+function inputCell(col, item){
+  const value = item[col.key];
+  if(col.type === 'checkbox') return `<td class="checkbox-cell"><input type="checkbox" data-field="${col.key}" ${value ? 'checked' : ''}></td>`;
+  if(col.type === 'number') return `<td><input type="number" data-field="${col.key}" value="${esc(value ?? '')}"></td>`;
+  return `<td><input type="text" data-field="${col.key}" value="${esc(value ?? '')}"></td>`;
+}
+
+function renderGroupDetail(section){
+  const items = section.items.filter(x => groupNameOf(x)===section.currentGroup);
+  const displayItems = mergedDisplayItems(section, section.currentGroup);
+  return `
+    <div class="breadcrumbs"><span class="badge badge-info crumb-link" data-action="back-root">${esc(section.title)}</span><span class="sep">/</span><span class="badge badge-muted">Nhóm ${esc(section.currentGroup)}</span><span class="chip">${items.length} thành phần</span></div>
+    <div class="tab-row">
+      <div class="tab ${section.detailTab==='results'?'active':''}" data-action="switch-tab" data-tab="results">Kết quả quét</div>
+      <div class="tab ${section.detailTab==='database'?'active':''}" data-action="switch-tab" data-tab="database">Database</div>
+      <div class="tab ${section.detailTab==='settings'?'active':''}" data-action="switch-tab" data-tab="settings">Cài đặt</div>
+      <span class="result-note">Kết quả, database và timeout được tách riêng để nhìn rõ hơn.</span>
+    </div>
+    <div class="view-card ${section.detailTab!=='results'?'hidden':''}" data-view="results">
+      <div class="between" style="margin-bottom:12px"><h3>Kết quả quét nhóm ${esc(section.currentGroup)}</h3><span class="compact-note">Kết quả sẽ hiện dần theo từng dòng hoàn thành.</span></div>
+      <div class="table-wrap tall"><table class="${section.id}-results"><thead><tr>${resultHeaders(section).map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${displayItems.length ? displayItems.map(item => section.renderResultRow(item, item.__index)).join('') : `<tr><td colspan="${resultHeaders(section).length}" class="empty">Nhóm này chưa có thành phần.</td></tr>`}</tbody></table></div>
+    </div>
+    <div class="view-card ${section.detailTab!=='database'?'hidden':''}" data-view="database">
+      <div class="between" style="margin-bottom:12px"><div><h3>Database</h3><p class="compact-note" style="margin-top:6px">Bảng này đã mở rộng toàn chiều ngang để thấy dữ liệu rõ hơn. Ô password hỗ trợ cả alias lẫn mật khẩu thật, và cột thao tác luôn ghim ở bên phải.</p></div><div class="database-tools"><button class="btn-secondary" data-action="add-item-group">Thêm thành phần</button><button class="btn-success" data-action="save-group">Lưu database</button></div></div>
+      <div class="table-wrap tall"><table><thead><tr>${section.dbColumns.map(col=>`<th>${col.label}</th>`).join('')}<th class="cell-actions">Thao tác</th></tr></thead><tbody>${items.length ? items.map(item => `<tr data-item-index="${item.__index}">${section.dbColumns.map(col => inputCell(col, item)).join('')}<td class="cell-actions"><button class="btn-danger btn-delete-row" data-index="${item.__index}">Xóa</button></td></tr>`).join('') : `<tr><td colspan="${section.dbColumns.length+1}" class="empty">Nhóm này chưa có thành phần. Hãy thêm mới.</td></tr>`}</tbody></table></div>
+    </div>
+    ${renderSettingsView(section)}`;
+}
+
+function bindSectionEvents(section){
+  const box = sectionMessageEl(section);
+  section.el.querySelectorAll('[data-action="scan-all"]').forEach(btn => btn.onclick = () => scanSection(section, null, btn));
+  section.el.querySelectorAll('[data-action="back-root"]').forEach(btn => btn.onclick = () => { syncVisibleDatabaseDraft(section); section.currentGroup = null; renderSection(section); });
+  section.el.querySelectorAll('[data-action="open-group"]').forEach(btn => btn.onclick = () => { syncVisibleDatabaseDraft(section); section.currentGroup = btn.dataset.group; section.detailTab = 'results'; renderSection(section); });
+  section.el.querySelectorAll('[data-action="scan-this-group"],[data-action="scan-group"]').forEach(btn => btn.onclick = () => scanSection(section, btn.dataset.group || section.currentGroup, btn));
+  section.el.querySelectorAll('[data-action="delete-this-group"]').forEach(btn => btn.onclick = () => deleteGroup(section, btn.dataset.group));
+  section.el.querySelectorAll('[data-action="delete-group"]').forEach(btn => btn.onclick = () => deleteGroup(section, section.currentGroup));
+  section.el.querySelectorAll('[data-action="rename-this-group"]').forEach(btn => btn.onclick = () => renameGroup(section, btn.dataset.group));
+  section.el.querySelectorAll('[data-action="rename-group"]').forEach(btn => btn.onclick = () => renameGroup(section, section.currentGroup));
+  section.el.querySelectorAll('[data-action="add-item-root"]').forEach(btn => btn.onclick = async () => { const group = await promptGroup('A'); if(group !== null) addItemToGroup(section, group); });
+  section.el.querySelectorAll('[data-action="save-group"]').forEach(btn => btn.onclick = () => saveCurrentGroup(section, btn));
+  section.el.querySelectorAll('[data-action="add-item-group"]').forEach(btn => btn.onclick = () => addItemToGroup(section, section.currentGroup));
+  section.el.querySelectorAll('[data-action="switch-tab"]').forEach(btn => btn.onclick = () => { syncVisibleDatabaseDraft(section); section.detailTab = btn.dataset.tab; renderSection(section); });
+  section.el.querySelectorAll('[data-action="save-settings"]').forEach(btn => btn.onclick = () => { saveSectionSettings(section, btn); });
+  section.el.querySelectorAll('.btn-delete-row').forEach(btn => btn.onclick = () => { syncVisibleDatabaseDraft(section); const idx = Number(btn.dataset.index); section.items = section.items.filter(item => item.__index !== idx); reindex(section); renderSection(section); });
+  section.el.querySelectorAll('.btn-scan-row,.btn-scan-result').forEach(btn => btn.onclick = () => { syncVisibleDatabaseDraft(section); scanSingle(section, Number(btn.dataset.index), btn); });
+  section.el.querySelectorAll('[data-action="toggle-solution-extra"]').forEach(btn => btn.onclick = (ev) => { ev.preventDefault(); btn.blur(); toggleSolutionExtra(Number(btn.dataset.index), btn.dataset.kind); });
+  section.el.querySelectorAll('[data-action="toggle-service-details"]').forEach(btn => btn.onclick = (ev) => { ev.preventDefault(); btn.blur(); toggleServiceDetails(Number(btn.dataset.index)); });
+  clearMessage(box);
+}
+
+function reindex(section){ section.items = section.items.map((item, index) => ({...item, __index:index})); }
+function syncVisibleDatabaseDraft(section){ if(section.currentGroup===null || section.detailTab!=='database') return; const rows = [...section.el.querySelectorAll('tbody tr[data-item-index]')]; if(!rows.length) return; const drafts = []; rows.forEach(row => { const sourceIndex = Number(row.dataset.itemIndex); const base = section.items.find(x => x.__index === sourceIndex) || section.defaultItem(section.currentGroup || 'A'); const item = {...base}; for(const col of section.dbColumns){ const el = row.querySelector(`[data-field="${col.key}"]`); if(!el) continue; item[col.key] = col.type === 'checkbox' ? !!el.checked : (col.type === 'number' ? (Number(el.value || 0) || 0) : el.value); } item.group = groupNameOf(item); drafts.push(item); }); const others = section.items.filter(item => groupNameOf(item)!==section.currentGroup).map(({__index, ...rest}) => rest); section.items = attachIndices(section, [...others, ...drafts]); }
+function addItemToGroup(section, group){ if(group === null) return; syncVisibleDatabaseDraft(section); const item = section.defaultItem(group || 'A'); section.items.push({...item, __index: section.items.length}); section.currentGroup = group || 'A'; renderSection(section); }
+async function deleteGroup(section, group){ if(!group) return; const ok = await askConfirm({title:'Xóa nhóm', message:`Xóa toàn bộ thành phần trong nhóm ${group} của ${section.title}?`, confirmText:'Xóa', danger:true}); if(!ok) return; section.items = section.items.filter(item => groupNameOf(item)!==group); reindex(section); section.currentGroup = null; await saveAllItems(section, null); }
+
+async function renameGroup(section, oldGroup){ if(!oldGroup) return; const next = await promptGroup(oldGroup); if(next === null || next === oldGroup) return; if(section.items.some(item => groupNameOf(item)===next)){ const ok = await askConfirm({title:'Gộp nhóm', message:`Nhóm ${next} đã tồn tại. Gộp toàn bộ thành phần từ nhóm ${oldGroup} vào nhóm ${next}?`, confirmText:'Gộp'}); if(!ok) return; } section.items = section.items.map(item => ({...item, group: groupNameOf(item)===oldGroup ? next : groupNameOf(item)})); reindex(section); section.currentGroup = next; await saveAllItems(section, null); renderSection(section); }
+
+function collectCurrentGroupRows(section){
+  const rows = [...section.el.querySelectorAll('tbody tr[data-item-index]')];
+  const items = [];
+  const errors = [];
+  rows.forEach((row, pos) => {
+    const sourceIndex = Number(row.dataset.itemIndex);
+    const base = section.items.find(x => x.__index === sourceIndex) || section.defaultItem(section.currentGroup || 'A');
+    const item = {...base};
+    for(const col of section.dbColumns){ const el = row.querySelector(`[data-field="${col.key}"]`); if(!el) continue; item[col.key] = col.type === 'checkbox' ? !!el.checked : (col.type === 'number' ? (Number(el.value || 0) || 0) : el.value.trim()); }
+    item.group = groupNameOf(item);
+    let invalid = false;
+    for(const field of section.required){ if(!String(item[field] ?? '').trim()) invalid = true; }
+    if(section.validate && section.validate(item)) invalid = true;
+    row.classList.toggle('invalid', invalid);
+    if(invalid) errors.push(`Dòng ${pos+1}` + (section.validate && section.validate(item) ? `: ${section.validate(item)}` : ''));
+    items.push(item);
+  });
+  return {items, errors};
+}
+
+async function saveSectionSettings(section, btn){ const box = sectionMessageEl(section); clearMessage(box); ensureButtonState(btn, true, 'Đang lưu...'); const preserve = captureScrollState(section); try { const payload = {}; [...section.el.querySelectorAll('[data-setting-key]')].forEach(el => { payload[el.dataset.settingKey] = Number(el.value || 0); }); const data = await apiPost(section.settingsUrl, {settings: payload}); section.settings = {...(section.settings || {}), ...(data.settings || {})}; if(section.id==='solution'){ Object.values(solutionDetailState).forEach(state => { if(state?.storage){ state.storage.data = null; state.storage.error = ''; } }); section.resultsMap.forEach((value, key) => { section.resultsMap.set(key, {...value, large_file_threshold_gb: getSolutionThresholdGb(value)}); }); } renderWithScroll(section, preserve); showMessage(sectionMessageEl(section), 'Đã lưu cài đặt timeout thành công.', 'success'); } catch (e) { showMessage(box, e.message || 'Không lưu được cài đặt timeout.', 'error'); } finally { ensureButtonState(btn, false); } }
+
+async function saveAllItems(section, btn){
+  const box = sectionMessageEl(section); clearMessage(box); ensureButtonState(btn, true, 'Đang lưu...');
+  try {
+    const payload = {}; payload[section.payloadField] = section.items.map(({__index, ...rest}) => rest);
+    const data = await apiPost(section.saveUrl, payload);
+    section.items = attachIndices(section, data[section.listField] || []);
+    remapResultsAfterSave(section);
+    renderSection(section);
+    showMessage(sectionMessageEl(section), 'Đã lưu database thành công.', 'success');
+  } catch (e) {
+    showMessage(box, e.message || 'Không lưu được database.', 'error');
+  } finally { ensureButtonState(btn, false); }
+}
+
+function remapResultsAfterSave(section){ const nextMap = new Map(); for(const item of section.items){ const k = keyOf(section, item); const existing = section.resultsMap.get(k); if(existing) nextMap.set(k, existing); } section.resultsMap = nextMap; }
+async function saveCurrentGroup(section, btn){ const {items, errors} = collectCurrentGroupRows(section); if(errors.length){ showMessage(sectionMessageEl(section), errors.join(' | '), 'error'); return; } const others = section.items.filter(item => groupNameOf(item)!==section.currentGroup).map(({__index, ...rest}) => rest); section.items = attachIndices(section, [...others, ...items]); await saveAllItems(section, btn); if(!section.items.some(item => groupNameOf(item)===section.currentGroup)){ section.currentGroup = null; renderSection(section); } }
+function scanKind(section, single=false){ if(section.id==='ssh') return single ? 'ssh-one' : 'ssh-all'; if(section.id==='web') return single ? 'web-one' : 'web-all'; return single ? 'solution-one' : 'solution-all'; }
+async function startBackgroundScan(kind, payload){ return apiPost('/api/scan-jobs/start', {kind, ...payload}); }
+async function waitForScanJob(jobId, onTick){ while(true){ const data = await apiGet(`/api/scan-jobs/${jobId}`); if(onTick) onTick(data); if(data.status === 'completed') return data.result || {}; if(data.status === 'failed') throw new Error(data.error || 'Scan job thất bại.'); await new Promise(r => setTimeout(r, 400)); } }
+function setScanMessage(section, text){ const box = sectionMessageEl(section); showMessage(box, text, 'info'); }
+function scrollCandidates(section){ const root = section?.el || document; return root.querySelectorAll ? [...root.querySelectorAll('.table-wrap, .table-wrap.tall, .view-card, .section-panel, .expand-panel')] : []; }
+function captureScrollState(section=null){ const state = {x:window.scrollX,y:window.scrollY,nodes:[],anchors:[]}; scrollCandidates(section).forEach((node, idx) => { const hasVertical = node.scrollHeight > node.clientHeight + 4; const hasHorizontal = node.scrollWidth > node.clientWidth + 4; if(!hasVertical && !hasHorizontal) return; state.nodes.push({idx, top:node.scrollTop || 0, left:node.scrollLeft || 0}); const anchors = node.querySelectorAll ? [...node.querySelectorAll('[data-row-anchor]')] : []; const firstVisible = anchors.find(anchor => { const rect = anchor.getBoundingClientRect(); const containerRect = node.getBoundingClientRect(); return rect.bottom >= containerRect.top && rect.top <= containerRect.bottom; }); if(firstVisible){ const rect = firstVisible.getBoundingClientRect(); const containerRect = node.getBoundingClientRect(); state.anchors.push({idx, anchor:firstVisible.dataset.rowAnchor, offset:rect.top - containerRect.top}); } }); return state; }
+function restoreScrollState(section, scrollState){ const apply = () => { const nodes = scrollCandidates(section); if(scrollState && Array.isArray(scrollState.nodes)){ scrollState.nodes.forEach(entry => { const node = nodes[entry.idx]; if(node){ node.scrollTop = entry.top || 0; node.scrollLeft = entry.left || 0; } }); } if(scrollState && Array.isArray(scrollState.anchors)){ scrollState.anchors.forEach(entry => { const node = nodes[entry.idx]; const anchor = section?.el?.querySelector?.(`[data-row-anchor="${entry.anchor}"]`) || document.querySelector(`[data-row-anchor="${entry.anchor}"]`); if(node && anchor){ const containerRect = node.getBoundingClientRect(); const anchorRect = anchor.getBoundingClientRect(); node.scrollTop += (anchorRect.top - containerRect.top) - (entry.offset || 0); } }); } if(scrollState && Number.isFinite(scrollState.x) && Number.isFinite(scrollState.y)){ window.scrollTo(scrollState.x, scrollState.y); } }; requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(apply))); }
+function renderWithScroll(section, scrollState){ renderSection(section); restoreScrollState(section, scrollState); }
+function scanButtonHtml(section, role, html){ if(section.scanMode==='group') return ''; if(section.scanMode==='single' && role==='group') return `<span class="scan-dim">${html}</span>`; return html; }
+async function scanSection(section, group, btn){ const box = sectionMessageEl(section); clearMessage(box); ensureButtonState(btn, true, 'Đang tạo tiến trình...'); section.scanMode='group'; renderSection(section); try { const started = await startBackgroundScan(scanKind(section, false), group ? {group} : {}); section.scanJob = started.job_id; const label = group ? `Đang quét nhóm ${group}` : 'Đang quét tất cả nhóm'; const firstMessage = section.id==='solution' ? `${label} ở nền. Từng giải pháp sẽ cập nhật dần theo 3 bước: metrics, service/login, rồi index.` : `${label} ở nền. Dòng nào xong sẽ hiện ngay.`; setScanMessage(section, firstMessage); const data = await waitForScanJob(started.job_id, (tick) => { const partials = Array.isArray(tick.partial_results) ? tick.partial_results : []; let changed = false; for(const result of partials){ const k = keyOf(section, result); const next = {...result, has_scanned:true}; if(JSON.stringify(section.resultsMap.get(k) || {}) !== JSON.stringify(next)){ section.resultsMap.set(k, next); changed = true; } } if(changed){ const s = captureScrollState(section); renderWithScroll(section, s); } const completed = Number(tick?.progress?.completed || partials.length || 0); const total = Number(tick?.progress?.total || 0); setScanMessage(section, `${label} ở nền. Đã xong ${completed}/${total || partials.length}.`); }); for(const result of (data.results || [])){ const k = keyOf(section, result); section.resultsMap.set(k, {...result, has_scanned:true}); } section.scanJob = null; section.scanMode=''; const doneScroll = captureScrollState(section); renderWithScroll(section, doneScroll); showMessage(sectionMessageEl(section), group ? `Đã quét xong nhóm ${group}.` : 'Đã quét xong tất cả nhóm.', 'success'); } catch (e) { section.scanJob = null; section.scanMode=''; const failScroll = captureScrollState(section); renderWithScroll(section, failScroll); showMessage(box, e.message || 'Quét thất bại.', 'error'); } finally { ensureButtonState(btn, false); } }
+async function scanSingle(section, index, btn){ const box = sectionMessageEl(section); clearMessage(box); ensureButtonState(btn, true, 'Đang tạo tiến trình...'); section.scanMode='single'; renderSection(section); try { const started = await startBackgroundScan(scanKind(section, true), {index}); section.scanJob = started.job_id; setScanMessage(section, `Đang quét riêng ${section.itemLabel} ở nền. Bạn có thể tiếp tục thao tác phần khác.`); const data = await waitForScanJob(started.job_id, () => { if(section.scanJob === started.job_id){ setScanMessage(section, `Đang quét riêng ${section.itemLabel} ở nền. Bạn có thể tiếp tục thao tác phần khác.`); } }); const result = {...data.result, has_scanned:true}; section.resultsMap.set(keyOf(section, result), result); section.scanJob = null; section.scanMode=''; const singleDoneScroll = captureScrollState(section); renderWithScroll(section, singleDoneScroll); showMessage(sectionMessageEl(section), `Đã quét riêng ${section.itemLabel}.`, 'success'); } catch (e) { section.scanJob = null; section.scanMode=''; const singleFailScroll = captureScrollState(section); renderWithScroll(section, singleFailScroll); showMessage(box, e.message || 'Quét riêng thất bại.', 'error'); } finally { ensureButtonState(btn, false); } }
+async function loadSection(section){ const [data, settingData] = await Promise.all([apiGet(section.listUrl), apiGet(section.settingsUrl)]); section.items = attachIndices(section, data[section.listField] || []); section.settings = {...(section.settings || {}), ...(settingData.settings || {})}; section.currentGroup = null; renderSection(section); if(section.scanJob){ waitForScanJob(section.scanJob).then(data => { if(data.results){ for(const result of (data.results || [])){ section.resultsMap.set(keyOf(section, result), {...result, has_scanned:true}); } } else if(data.result){ section.resultsMap.set(keyOf(section, data.result), {...data.result, has_scanned:true}); } section.scanJob = null; renderSection(section); }).catch(() => { section.scanJob = null; renderSection(section); }); } }
+(async function init(){ try { renderSecretSection(); await loadSection(sections.ssh); await loadSection(sections.web); await loadSection(sections.solution); } catch (e) { openModal(`<div class="modal-card"><h3>Lỗi tải dữ liệu</h3><p>${esc(e.message || 'Không tải được dữ liệu ban đầu.')}</p><div class="modal-actions"><button class="btn-primary" data-modal-close>Đã hiểu</button></div></div>`); }})();
 </script>
 </body>
 </html>

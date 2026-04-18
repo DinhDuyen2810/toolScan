@@ -1,32 +1,42 @@
 [
   {
+    "group": "A",
     "ip": "163.223.58.4",
     "username": "root",
     "password": "pass_ssh_server_01",
-    "snmp_community": "snmpstring_mac_dinh"
+    "snmp_community": "snmpstring_mac_dinh",
+    "name": "server"
   },
   {
+    "group": "A",
     "ip": "163.223.58.5",
     "username": "root",
     "password": "pass_ssh_server_01",
-    "snmp_community": "snmpstring_mac_dinh"
+    "snmp_community": "snmpstring_mac_dinh",
+    "name": "server"
   },
   {
+    "group": "A",
     "ip": "163.223.58.12",
     "username": "root",
     "password": "pass_ssh_server_02",
-    "snmp_community": "snmpstring_mac_dinh"
+    "snmp_community": "snmpstring_mac_dinh",
+    "name": "server"
   },
   {
+    "group": "A",
     "ip": "163.223.58.13",
     "username": "root",
     "password": "pass_ssh_server_02",
-    "snmp_community": "snmpstring_mac_dinh"
+    "snmp_community": "snmpstring_mac_dinh",
+    "name": "server"
   },
   {
+    "group": "A",
     "ip": "163.223.58.14",
     "username": "root",
     "password": "pass_ssh_server_02",
-    "snmp_community": "snmpstring_mac_dinh"
+    "snmp_community": "snmpstring_mac_dinh",
+    "name": "server"
   }
 ]

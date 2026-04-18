@@ -1,0 +1,19 @@
+{
+  "ssh": {
+    "ssh_connect_timeout": 5.0,
+    "ssh_command_timeout": 10.0,
+    "snmp_timeout": 1.0
+  },
+  "web": {
+    "web_connect_timeout": 3.0,
+    "web_read_timeout": 5.0
+  },
+  "solution": {
+    "web_connect_timeout": 3.0,
+    "web_read_timeout": 15.0,
+    "ssh_connect_timeout": 5.0,
+    "ssh_command_timeout": 10.0,
+    "snmp_timeout": 1.0,
+    "large_file_threshold_gb": 5.0
+  }
+}

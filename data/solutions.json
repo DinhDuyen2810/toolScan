@@ -1,5 +1,6 @@
 [
   {
+    "group": "A",
     "name": "SIEM",
     "endpoint": "163.223.58.132",
     "username": "admin",
@@ -15,6 +16,7 @@
     "snmp_retries": 0
   },
   {
+    "group": "A",
     "name": "WAF01",
     "endpoint": "163.223.58.130",
     "username": "admin",
@@ -30,6 +32,7 @@
     "snmp_retries": 0
   },
   {
+    "group": "A",
     "name": "WAF02",
     "endpoint": "163.223.58.131",
     "username": "admin",
@@ -45,6 +48,7 @@
     "snmp_retries": 0
   },
   {
+    "group": "A",
     "name": "EDR",
     "endpoint": "163.223.58.133",
     "username": "admin",
@@ -60,6 +64,7 @@
     "snmp_retries": 0
   },
   {
+    "group": "A",
     "name": "NAC",
     "endpoint": "163.223.58.134",
     "username": "admin",
@@ -75,6 +80,7 @@
     "snmp_retries": 0
   },
   {
+    "group": "A",
     "name": "NIPS_MCNB",
     "endpoint": "163.223.58.135",
     "username": "admin",
@@ -90,6 +96,7 @@
     "snmp_retries": 0
   },
   {
+    "group": "A",
     "name": "NIPS_CSDL",
     "endpoint": "163.223.58.136",
     "username": "admin",
@@ -105,6 +112,7 @@
     "snmp_retries": 0
   },
   {
+    "group": "A",
     "name": "NIPS_Tools",
     "endpoint": "163.223.58.137",
     "username": "admin",
@@ -120,6 +128,7 @@
     "snmp_retries": 0
   },
   {
+    "group": "A",
     "name": "NIPS_LAN",
     "endpoint": "163.223.58.138",
     "username": "admin",
@@ -135,6 +144,7 @@
     "snmp_retries": 0
   },
   {
+    "group": "A",
     "name": "NIPS_DMZ",
     "endpoint": "163.223.58.139",
     "username": "admin",
@@ -150,6 +160,7 @@
     "snmp_retries": 0
   },
   {
+    "group": "A",
     "name": "NIPS_V2Cloud",
     "endpoint": "163.223.58.144",
     "username": "admin",
@@ -165,6 +176,7 @@
     "snmp_retries": 0
   },
   {
+    "group": "A",
     "name": "NIPS_MGT",
     "endpoint": "163.223.58.146",
     "username": "admin",
@@ -180,6 +192,7 @@
     "snmp_retries": 0
   },
   {
+    "group": "A",
     "name": "PAM",
     "endpoint": "163.223.58.143",
     "username": "admin",
@@ -195,6 +208,7 @@
     "snmp_retries": 0
   },
   {
+    "group": "A",
     "name": "NOC",
     "endpoint": "163.223.58.150",
     "username": "admin",
